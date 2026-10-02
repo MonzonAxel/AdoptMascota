@@ -29,7 +29,7 @@ Copiar `.env.example` como `.env.local` para configurar la URL base de la API.
 - Lucide React para iconos
 - CSS propio para estilos globales y componentes reutilizables
 
-## Rutas iniciales
+## Rutas 
 
 - `/inicio`: landing publica
 - `/mascotas`: galeria y filtro de mascotas
@@ -48,8 +48,11 @@ assets/       Imagenes y recursos estaticos
 components/   Componentes reutilizables y sus estilos
 context/      Estado global
 hooks/        Hooks personalizados
-layout/       Layout publico y privado
-pages/        Vistas organizadas por pagina
+layout/       Layout publico, privado y de acceso
+pages/
+	admin/      Mascotas, solicitudes y usuarios del refugio
+	web/        Inicio y catalogo publico
+	login/      Acceso administrativo independiente
 routes/       Enrutado y proteccion de rutas
 services/     Cliente Axios y endpoints
 utils/        Datos de apoyo y funciones generales
