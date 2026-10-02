@@ -1,0 +1,28 @@
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.brand__mark {
+  display: inline-grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 0.65rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.brand__name {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.brand__name span {
+  color: var(--accent);
+}

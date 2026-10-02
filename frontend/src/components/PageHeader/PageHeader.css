@@ -1,0 +1,10 @@
+.page-header {
+  max-width: 46rem;
+  padding: 4.5rem 0 2.5rem;
+}
+
+@media (max-width: 680px) {
+  .page-header {
+    padding: 3rem 0 2rem;
+  }
+}
