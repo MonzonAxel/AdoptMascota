@@ -1,0 +1,112 @@
+.pet-detail-page {
+  padding-top: 2.5rem;
+  padding-bottom: 5rem;
+}
+
+.pet-detail-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.pet-detail-page__back:hover {
+  color: var(--primary);
+}
+
+.pet-detail-page__profile {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.8fr) minmax(0, 1fr);
+  gap: 3rem;
+  align-items: center;
+  padding: 2.5rem 0;
+}
+
+.pet-detail-page__image {
+  display: grid;
+  min-height: 25rem;
+  place-items: center;
+  border-radius: 0.8rem;
+  background: linear-gradient(135deg, #dcedc8, #fff3e0);
+  color: var(--primary);
+}
+
+.pet-detail-page__image img {
+  width: 100%;
+  height: 25rem;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.pet-detail-page__content {
+  max-width: 34rem;
+}
+
+.pet-detail-page__summary {
+  margin: 1rem 0 1.75rem;
+  color: var(--muted-foreground);
+  font-size: 1rem;
+}
+
+.pet-detail-page__facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 0 0 2rem;
+}
+
+.pet-detail-page__facts div {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.pet-detail-page__facts dt {
+  color: var(--muted-foreground);
+  font-family: var(--font-code);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+.pet-detail-page__facts dd {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.pet-detail-page--missing {
+  display: grid;
+  min-height: 30rem;
+  align-content: center;
+  justify-items: start;
+  gap: 1.25rem;
+}
+
+.pet-detail-page--missing .page-title {
+  max-width: 34rem;
+}
+
+@media (max-width: 720px) {
+  .pet-detail-page__profile {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .pet-detail-page__image {
+    min-height: 16rem;
+  }
+
+  .pet-detail-page__image img {
+    height: 16rem;
+  }
+}
+
+@media (max-width: 460px) {
+  .pet-detail-page__facts {
+    grid-template-columns: 1fr;
+  }
+}
