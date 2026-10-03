@@ -1,0 +1,115 @@
+.animal-form__grid {
+  grid-template-columns: minmax(13rem, 1fr) repeat(2, minmax(0, 1fr));
+}
+
+.animal-form__photos {
+  grid-column: 1;
+  grid-row: 1 / span 5;
+}
+
+.animal-form__name,
+.animal-form__health,
+.animal-form__behavior {
+  grid-column: 2 / 4;
+}
+
+.animal-form__upload {
+  position: relative;
+  display: grid;
+  min-height: 8rem;
+  align-content: center;
+  justify-items: center;
+  gap: 0.35rem;
+  overflow: hidden;
+  border: 1px dashed var(--border);
+  border-radius: 0.45rem;
+  background: #f4f6f1;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.animal-form__upload:focus-within {
+  outline: 3px solid color-mix(in srgb, var(--ring) 25%, transparent);
+  outline-offset: 2px;
+}
+
+.animal-form__upload input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.animal-form__upload span {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.animal-form__upload small {
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+}
+
+.animal-form__previews {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.animal-form__preview {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--background);
+}
+
+.animal-form__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.animal-form__remove-photo {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  width: 1.6rem;
+  min-height: 1.6rem;
+  padding: 0;
+  background: var(--card);
+}
+
+@media (max-width: 760px) {
+  .animal-form__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .animal-form__photos {
+    grid-row: 1 / span 4;
+  }
+
+  .animal-form__name,
+  .animal-form__health,
+  .animal-form__behavior {
+    grid-column: 1 / 3;
+  }
+}
+
+@media (max-width: 540px) {
+  .animal-form__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .animal-form__photos,
+  .animal-form__name,
+  .animal-form__health,
+  .animal-form__behavior {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
