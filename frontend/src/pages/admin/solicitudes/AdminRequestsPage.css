@@ -1,0 +1,11 @@
+.admin-requests-page__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.admin-requests-page__view {
+  min-height: 2rem;
+  padding: 0 0.55rem;
+  font-size: 0.78rem;
+}

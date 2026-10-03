@@ -4,6 +4,7 @@ import { LoginLayout } from '@/layout/LoginLayout/LoginLayout'
 import { PrivateLayout } from '@/layout/PrivateLayout/PrivateLayout'
 import { PublicLayout } from '@/layout/PublicLayout/PublicLayout'
 import { AdminPetsPage } from '@/pages/admin/mascotas/AdminPetsPage'
+import { AdminRequestDetailPage } from '@/pages/admin/solicitudes/AdminRequestDetailPage'
 import { AdminRequestsPage } from '@/pages/admin/solicitudes/AdminRequestsPage'
 import { AdminUsersPage } from '@/pages/admin/usuarios/AdminUsersPage'
 import { LoginPage } from '@/pages/login/LoginPage'
@@ -31,6 +32,8 @@ export function AppRoutes() {
           <Route path="/admin" element={<Navigate to="/admin/mascotas" replace />} />
           <Route path="/admin/mascotas" element={<AdminPetsPage />} />
           <Route path="/admin/solicitudes" element={<AdminRequestsPage />} />
+          <Route path="/admin/solicitudes/:id" element={<AdminRequestDetailPage />} />
+          <Route path="/solicitud/:id" element={<AdminRequestDetailPage />} />
           <Route path="/admin/usuarios" element={<AdminUsersPage />} />
         </Route>
       </Route>
