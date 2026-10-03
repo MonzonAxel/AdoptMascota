@@ -1,5 +1,5 @@
 import { ClipboardList, LayoutDashboard, LogOut, PawPrint, Users } from 'lucide-react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 import { Brand } from '@/components/Brand/Brand'
 import { Button } from '@/components/Button/Button'
@@ -15,6 +15,7 @@ const adminLinks = [
 
 export function PrivateLayout() {
   const { signOut } = useAuth()
+  const { pathname } = useLocation()
 
   return (
     <div className="private-layout">
@@ -27,7 +28,17 @@ export function PrivateLayout() {
             Resumen
           </NavLink>
           {adminLinks.map(({ to, label, icon: Icon }) => (
-            <NavLink className="private-layout__link" key={to} to={to}>
+            <NavLink
+              className={({ isActive }) =>
+                `private-layout__link${
+                  isActive || (to === '/admin/solicitudes' && pathname.startsWith('/solicitud/'))
+                    ? ' active'
+                    : ''
+                }`
+              }
+              key={to}
+              to={to}
+            >
               <Icon size={17} aria-hidden="true" />
               {label}
             </NavLink>

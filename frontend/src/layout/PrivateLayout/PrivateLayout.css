@@ -5,10 +5,18 @@
 }
 
 .private-layout__sidebar {
+  position: sticky;
+  z-index: 5;
+  top: 0;
   display: flex;
   width: 17rem;
+  height: 100vh;
+  height: 100dvh;
+  flex: 0 0 17rem;
+  align-self: flex-start;
   flex-direction: column;
   gap: 2rem;
+  overflow-y: auto;
   padding: 1.5rem 1rem;
   border-right: 1px solid var(--border);
   background: var(--card);
@@ -101,7 +109,12 @@
   }
 
   .private-layout__sidebar {
+    position: static;
     width: 100%;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    flex-basis: auto;
     gap: 1rem;
     padding: 1rem;
     border-right: 0;
