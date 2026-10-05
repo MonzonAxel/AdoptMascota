@@ -5,12 +5,12 @@ import './Brand.css'
 
 export function Brand() {
   return (
-    <Link className="brand" to="/inicio" aria-label="Adoptá, inicio">
+    <Link className="brand" to="/inicio" aria-label="AdoptMascota, inicio">
       <span className="brand__mark" aria-hidden="true">
         <PawPrint size={20} strokeWidth={2.5} />
       </span>
       <span className="brand__name">
-        Adopt<span>á</span>
+        Adopt<span>Mascota</span>
       </span>
     </Link>
   )

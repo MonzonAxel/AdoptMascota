@@ -1,0 +1,329 @@
+/* Hero Section con imagen de fondo referida a mascotas */
+.home-page__hero {
+  position: relative;
+  min-height: 38rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  background-image: url('https://images.unsplash.com/photo-1450778869180-41d0601e046e?auto=format&fit=crop&w=1800&q=80');
+  background-size: cover;
+  background-position: center 30%;
+  background-repeat: no-repeat;
+}
+
+.home-page__hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    95deg,
+    rgba(249, 251, 231, 0.96) 0%,
+    rgba(249, 251, 231, 0.92) 48%,
+    rgba(249, 251, 231, 0.55) 100%
+  );
+  backdrop-filter: blur(2px);
+}
+
+.home-page__hero-content {
+  position: relative;
+  z-index: 1;
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+.home-page__hero-copy {
+  max-width: 40rem;
+}
+
+.home-page__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  color: var(--primary);
+  font-family: var(--font-code);
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.03em;
+}
+
+.home-page__title {
+  margin: 0;
+  color: var(--foreground);
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.08;
+}
+
+.home-page__description {
+  margin: 1.25rem 0 0;
+  color: #37474f;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  line-height: 1.6;
+}
+
+.home-page__actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 2.25rem;
+}
+
+.home-page__actions a {
+  text-decoration: none;
+}
+
+.home-page__secondary-action {
+  color: var(--primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: color 160ms ease;
+}
+
+.home-page__secondary-action:hover {
+  color: #1b5e20;
+  text-decoration: underline;
+}
+
+.home-page__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(46, 125, 50, 0.18);
+}
+
+.home-page__badge-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2e7d32;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+/* Pasos de adopción */
+.home-page__steps {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+.home-page__section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.home-page__section-heading h2 {
+  margin: 0.25rem 0 0;
+  color: var(--foreground);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.home-page__section-subtitle {
+  max-width: 22rem;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.home-page__step-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.home-page__step-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1.75rem;
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--primary);
+  border-radius: 0.85rem;
+  background: var(--card);
+  box-shadow: 0 4px 18px rgb(38 50 56 / 4%);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.home-page__step-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgb(38 50 56 / 8%);
+}
+
+.home-page__step-number {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  color: var(--accent);
+  font-family: var(--font-code);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.home-page__step-icon {
+  display: inline-grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: var(--secondary);
+  color: var(--primary);
+  margin-bottom: 1.25rem;
+}
+
+.home-page__step-card h3 {
+  margin: 0 0 0.5rem;
+  color: var(--foreground);
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2vw, 1.5rem);
+  font-weight: 600;
+}
+
+.home-page__step-card p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Sección Destacadas */
+.home-page__featured {
+  padding-top: 4rem;
+  padding-bottom: 5rem;
+  background: color-mix(in srgb, var(--background) 90%, white);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.home-page__view-all-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.home-page__view-all-link:hover {
+  text-decoration: underline;
+}
+
+.home-page__featured-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+/* Banner de compromiso */
+.home-page__banner {
+  padding-top: 4rem;
+  padding-bottom: 5rem;
+}
+
+.home-page__banner-box {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 2.25rem 2.5rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--secondary);
+}
+
+.home-page__banner-icon {
+  display: inline-grid;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.home-page__banner-text {
+  flex: 1;
+}
+
+.home-page__banner-text h3 {
+  margin: 0 0 0.4rem;
+  color: var(--foreground);
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.home-page__banner-text p {
+  margin: 0;
+  color: #37474f;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .home-page__step-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-page__featured-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-page__banner-box {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem 1.5rem;
+  }
+
+  .home-page__banner-text {
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-page__hero {
+    min-height: auto;
+  }
+
+  .home-page__hero-overlay {
+    background: rgba(249, 251, 231, 0.95);
+  }
+
+  .home-page__hero-content {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+
+  .home-page__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .home-page__badges {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .home-page__section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .home-page__featured-grid {
+    grid-template-columns: 1fr;
+  }
+}
