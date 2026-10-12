@@ -33,8 +33,8 @@ export function PublicLayout() {
 
       <footer className="public-layout__footer">
         <div className="page-container public-layout__footer-content">
-          <span>Adoptá</span>
-          <span>Plataforma de adopcion responsable</span>
+          <span>AdoptMascota</span>
+          <span>Plataforma de adopción responsable</span>
         </div>
       </footer>
     </div>

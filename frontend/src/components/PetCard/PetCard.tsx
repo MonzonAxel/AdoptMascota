@@ -1,4 +1,4 @@
-import { PawPrint } from 'lucide-react'
+import { ArrowRight, Calendar, PawPrint } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import type { Animal } from '@/types/animal'
@@ -20,33 +20,55 @@ export function PetCard({ animal }: PetCardProps) {
 
   return (
     <article className="pet-card">
-      <div className="pet-card__image">
+      <div className="pet-card__image-container">
         {fotoPrincipal ? (
-          <img src={fotoPrincipal.url} alt={`Foto de ${animal.nombre}`} />
+          <img
+            className="pet-card__image"
+            src={fotoPrincipal.url}
+            alt={`Foto de ${animal.nombre}`}
+            loading="lazy"
+          />
         ) : (
-          <PawPrint size={44} strokeWidth={1.5} aria-hidden="true" />
-        )}
-      </div>
-      <div className="pet-card__body">
-        <div className="pet-card__heading">
-          <div>
-            <p className="pet-card__species">{formatearEspecie(animal.especie)}</p>
-            <h2>{animal.nombre}</h2>
+          <div className="pet-card__placeholder">
+            <PawPrint size={48} strokeWidth={1.5} aria-hidden="true" />
           </div>
-          <span className={`pet-card__status pet-card__status--${animal.estado}`}>
-            {formatearEstadoAnimal(animal.estado)}
+        )}
+        <span className={`pet-card__status pet-card__status--${animal.estado}`}>
+          {formatearEstadoAnimal(animal.estado)}
+        </span>
+      </div>
+
+      <div className="pet-card__body">
+        <div className="pet-card__header">
+          <span className="pet-card__species-tag">
+            {formatearEspecie(animal.especie)} • {animal.raza ?? 'Mestizo/a'}
+          </span>
+          <h3 className="pet-card__title">{animal.nombre}</h3>
+        </div>
+
+        <p className="pet-card__description">
+          {animal.comportamiento ?? 'Una mascota leal y cariñosa lista para llenar tu hogar de alegría.'}
+        </p>
+
+        <div className="pet-card__chips">
+          <span className="pet-card__chip">
+            <Calendar size={13} aria-hidden="true" />
+            {formatearEdad(animal.edad)}
+          </span>
+          <span className="pet-card__chip">
+            {animal.sexo === 'hembra' ? '♀ Hembra' : '♂ Macho'}
+          </span>
+          <span className="pet-card__chip">
+            {formatearTamano(animal.tamano)}
           </span>
         </div>
-        <p className="pet-card__description">
-          {animal.comportamiento ?? 'Todavía no hay una descripción disponible.'}
-        </p>
-        <div className="pet-card__meta">
-          <span>{formatearEdad(animal.edad)}</span>
-          <span>{formatearTamano(animal.tamano)}</span>
+
+        <div className="pet-card__footer">
+          <Link className="pet-card__cta" to={`/mascotas/${animal.id}`}>
+            <span>Conocer a {animal.nombre}</span>
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
         </div>
-        <Link className="pet-card__link" to={`/mascotas/${animal.id}`}>
-          Ver perfil
-        </Link>
       </div>
     </article>
   )

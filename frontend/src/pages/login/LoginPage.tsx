@@ -82,6 +82,16 @@ export function LoginPage() {
         <Button className="login-page__submit" type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
         </Button>
+
+        <div className="login-page__footer">
+          <button
+            type="button"
+            className="login-page__back-link"
+            onClick={() => navigate('/inicio')}
+          >
+            ← Volver a inicio
+          </button>
+        </div>
       </form>
     </section>
   )
