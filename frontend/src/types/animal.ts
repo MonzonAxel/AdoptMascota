@@ -1,8 +1,19 @@
-export type TipoEspecieAnimal = 'perro' | 'gato' | 'otro'
+export type TipoEspecieAnimal = 'perro' | 'gato'
 export type TipoSexoAnimal = 'macho' | 'hembra'
 export type TipoTamanoAnimal = 'pequeno' | 'mediano' | 'grande'
 export type EstadoAnimal = 'disponible' | 'en_proceso' | 'adoptado'
-export type ColorAnimal = 'marron' | 'blanco' | 'negro' | 'beige' | 'multicolor'
+export type ColorAnimal =
+  | 'negro'
+  | 'blanco'
+  | 'marron'
+  | 'gris'
+  | 'naranja'
+  | 'crema'
+  | 'dorado'
+  | 'atigrado'
+  | 'manchado'
+  | 'tricolor'
+  | 'otro'
 
 export interface FotoAnimal {
   id: number
@@ -65,7 +76,17 @@ export interface FiltrosAnimales {
   especie?: TipoEspecieAnimal
   tamano?: TipoTamanoAnimal
   estado?: EstadoAnimal
-  busqueda?: string
+  color?: ColorAnimal
+  raza?: string
+  edad_min?: number
+  edad_max?: number
+  page?: number
+  limit?: number
 }
 
-export type FiltrosPublicosAnimales = Pick<FiltrosAnimales, 'especie' | 'tamano' | 'busqueda'>
+export type FiltrosPublicosAnimales = Pick<
+  FiltrosAnimales,
+  'especie' | 'tamano' | 'color' | 'raza' | 'edad_min' | 'edad_max' | 'page' | 'limit'
+> & {
+  busqueda?: string
+}
