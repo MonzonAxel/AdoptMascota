@@ -34,7 +34,9 @@ export function AppRoutes() {
           <Route path="/admin/solicitudes" element={<AdminRequestsPage />} />
           <Route path="/admin/solicitudes/:id" element={<AdminRequestDetailPage />} />
           <Route path="/solicitud/:id" element={<AdminRequestDetailPage />} />
-          <Route path="/admin/usuarios" element={<AdminUsersPage />} />
+          <Route element={<ProtectedRoute roles={['admin']} />}>
+            <Route path="/admin/usuarios" element={<AdminUsersPage />} />
+          </Route>
         </Route>
       </Route>
 
