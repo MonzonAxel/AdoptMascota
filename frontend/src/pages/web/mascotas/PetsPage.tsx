@@ -1,11 +1,12 @@
 import { Filter, RotateCcw, Search, SlidersHorizontal } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { useDeferredValue, useState } from 'react'
 
-import { PetCard } from '@/components/PetCard/PetCard'
 import { PageHeader } from '@/components/PageHeader/PageHeader'
-import type { TipoEspecieAnimal, TipoSexoAnimal, TipoTamanoAnimal, EstadoAnimal } from '@/types/animal'
-import { formatearEspecie } from '@/utils/formateadoresAnimal'
-import { animalesDeEjemplo } from '@/utils/datosAnimales'
+import { PetCard } from '@/components/PetCard/PetCard'
+import { animalesService } from '@/services/animalesService'
+import type { ColorAnimal, TipoEspecieAnimal, TipoSexoAnimal, TipoTamanoAnimal } from '@/types/animal'
+import { formatearColor, formatearEspecie } from '@/utils/formateadoresAnimal'
 
 import './PetsPage.css'
 
@@ -14,59 +15,40 @@ export function PetsPage() {
   const [especieSeleccionada, setEspecieSeleccionada] = useState<TipoEspecieAnimal | 'todos'>('todos')
   const [tamanoSeleccionado, setTamanoSeleccionado] = useState<TipoTamanoAnimal | 'todos'>('todos')
   const [sexoSeleccionado, setSexoSeleccionado] = useState<TipoSexoAnimal | 'todos'>('todos')
-  const [estadoSeleccionado, setEstadoSeleccionado] = useState<EstadoAnimal | 'todos'>('todos')
-
-  const busquedaDiferida = useDeferredValue(busqueda)
-  const busquedaNormalizada = busquedaDiferida.trim().toLowerCase()
-
-  const hayFiltrosActivos =
-    busqueda !== '' ||
-    especieSeleccionada !== 'todos' ||
-    tamanoSeleccionado !== 'todos' ||
-    sexoSeleccionado !== 'todos' ||
-    estadoSeleccionado !== 'todos'
+  const [colorSeleccionado, setColorSeleccionado] = useState<ColorAnimal | 'todos'>('todos')
+  const [pagina, setPagina] = useState(1)
+  const busquedaDiferida = useDeferredValue(busqueda.trim().toLowerCase())
+  const opcionesQuery = useQuery({
+    queryKey: ['mascotas-filtros'],
+    queryFn: () => animalesService.obtenerOpcionesFiltros(),
+  })
+  const mascotasQuery = useQuery({
+    queryKey: ['mascotas-publicas', especieSeleccionada, tamanoSeleccionado, colorSeleccionado, pagina],
+    queryFn: () => animalesService.listarPublicos({
+      especie: especieSeleccionada === 'todos' ? undefined : especieSeleccionada,
+      tamano: tamanoSeleccionado === 'todos' ? undefined : tamanoSeleccionado,
+      color: colorSeleccionado === 'todos' ? undefined : colorSeleccionado,
+      page: pagina,
+      limit: 50,
+    }),
+  })
+  const animales = mascotasQuery.data?.items ?? []
+  const animalesFiltrados = animales.filter((animal) => {
+    const texto = `${animal.nombre} ${animal.especie} ${animal.raza ?? ''} ${animal.color} ${animal.sexo}`.toLowerCase()
+    return (!busquedaDiferida || texto.includes(busquedaDiferida)) &&
+      (sexoSeleccionado === 'todos' || animal.sexo === sexoSeleccionado)
+  })
+  const hayFiltrosActivos = Boolean(busqueda) || especieSeleccionada !== 'todos' ||
+    tamanoSeleccionado !== 'todos' || sexoSeleccionado !== 'todos' || colorSeleccionado !== 'todos'
 
   function limpiarFiltros() {
     setBusqueda('')
     setEspecieSeleccionada('todos')
     setTamanoSeleccionado('todos')
     setSexoSeleccionado('todos')
-    setEstadoSeleccionado('todos')
+    setColorSeleccionado('todos')
+    setPagina(1)
   }
-
-  const animalesFiltrados = animalesDeEjemplo.filter((animal) => {
-    // Filtro por texto
-    if (busquedaNormalizada) {
-      const matchTexto = `${animal.nombre} ${formatearEspecie(animal.especie)} ${animal.raza ?? ''} ${
-        animal.comportamiento ?? ''
-      } ${animal.color}`
-        .toLowerCase()
-        .includes(busquedaNormalizada)
-      if (!matchTexto) return false
-    }
-
-    // Filtro por especie
-    if (especieSeleccionada !== 'todos' && animal.especie !== especieSeleccionada) {
-      return false
-    }
-
-    // Filtro por tamaño
-    if (tamanoSeleccionado !== 'todos' && animal.tamano !== tamanoSeleccionado) {
-      return false
-    }
-
-    // Filtro por sexo
-    if (sexoSeleccionado !== 'todos' && animal.sexo !== sexoSeleccionado) {
-      return false
-    }
-
-    // Filtro por estado
-    if (estadoSeleccionado !== 'todos' && animal.estado !== estadoSeleccionado) {
-      return false
-    }
-
-    return true
-  })
 
   return (
     <div className="page-container pets-page">
@@ -75,8 +57,6 @@ export function PetsPage() {
         title="Mascotas esperando conocerte."
         description="Explorá los perfiles y utilizá los filtros para encontrar al compañero ideal para tu hogar."
       />
-
-      {/* Barra de búsqueda y filtros */}
       <section className="pets-page__toolbar" aria-label="Filtros de búsqueda">
         <div className="pets-page__search-row">
           <label className="pets-page__search">
@@ -85,113 +65,91 @@ export function PetsPage() {
             <input
               type="search"
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por nombre, raza, personalidad..."
+              onChange={(evento) => setBusqueda(evento.target.value)}
+              placeholder="Buscar por nombre, raza o color..."
             />
           </label>
-
-          {hayFiltrosActivos && (
-            <button
-              type="button"
-              className="pets-page__reset-btn"
-              onClick={limpiarFiltros}
-              title="Restablecer todos los filtros"
-            >
-              <RotateCcw size={15} />
+          {hayFiltrosActivos ? (
+            <button type="button" className="pets-page__reset-btn" onClick={limpiarFiltros}>
+              <RotateCcw size={15} aria-hidden="true" />
               <span>Limpiar filtros</span>
             </button>
-          )}
+          ) : null}
         </div>
-
-        {/* Filtros rápidos en pills / selects */}
         <div className="pets-page__filters">
           <div className="pets-page__filter-group">
-            <span className="pets-page__filter-label">
-              <Filter size={14} /> Especie:
-            </span>
+            <span className="pets-page__filter-label"><Filter size={14} aria-hidden="true" /> Especie:</span>
             <div className="pets-page__chips">
               <button
                 type="button"
                 className={`pets-page__chip ${especieSeleccionada === 'todos' ? 'active' : ''}`}
-                onClick={() => setEspecieSeleccionada('todos')}
-              >
-                Todas
-              </button>
-              <button
-                type="button"
-                className={`pets-page__chip ${especieSeleccionada === 'perro' ? 'active' : ''}`}
-                onClick={() => setEspecieSeleccionada('perro')}
-              >
-                🐶 Perros
-              </button>
-              <button
-                type="button"
-                className={`pets-page__chip ${especieSeleccionada === 'gato' ? 'active' : ''}`}
-                onClick={() => setEspecieSeleccionada('gato')}
-              >
-                🐱 Gatos
-              </button>
+                onClick={() => { setEspecieSeleccionada('todos'); setPagina(1) }}
+              >Todas</button>
+              {(opcionesQuery.data?.especies ?? ['perro', 'gato']).map((especie) => (
+                <button
+                  type="button"
+                  key={especie}
+                  className={`pets-page__chip ${especieSeleccionada === especie ? 'active' : ''}`}
+                  onClick={() => { setEspecieSeleccionada(especie as TipoEspecieAnimal); setPagina(1) }}
+                >{formatearEspecie(especie as TipoEspecieAnimal)}</button>
+              ))}
             </div>
           </div>
-
           <div className="pets-page__dropdowns">
             <div className="pets-page__select-wrapper">
               <label htmlFor="tamano-select" className="sr-only">Tamaño</label>
               <select
                 id="tamano-select"
                 value={tamanoSeleccionado}
-                onChange={(e) => setTamanoSeleccionado(e.target.value as TipoTamanoAnimal | 'todos')}
+                onChange={(evento) => { setTamanoSeleccionado(evento.target.value as TipoTamanoAnimal | 'todos'); setPagina(1) }}
               >
                 <option value="todos">Todos los tamaños</option>
-                <option value="pequeno">Pequeño</option>
-                <option value="mediano">Mediano</option>
-                <option value="grande">Grande</option>
+                {(opcionesQuery.data?.tamanos ?? ['pequeno', 'mediano', 'grande']).map((tamano) => (
+                  <option key={tamano} value={tamano}>{tamano}</option>
+                ))}
               </select>
             </div>
-
             <div className="pets-page__select-wrapper">
               <label htmlFor="sexo-select" className="sr-only">Sexo</label>
               <select
                 id="sexo-select"
                 value={sexoSeleccionado}
-                onChange={(e) => setSexoSeleccionado(e.target.value as TipoSexoAnimal | 'todos')}
+                onChange={(evento) => setSexoSeleccionado(evento.target.value as TipoSexoAnimal | 'todos')}
               >
                 <option value="todos">Todos los sexos</option>
                 <option value="macho">Macho</option>
                 <option value="hembra">Hembra</option>
               </select>
             </div>
-
             <div className="pets-page__select-wrapper">
-              <label htmlFor="estado-select" className="sr-only">Estado</label>
+              <label htmlFor="color-select" className="sr-only">Color</label>
               <select
-                id="estado-select"
-                value={estadoSeleccionado}
-                onChange={(e) => setEstadoSeleccionado(e.target.value as EstadoAnimal | 'todos')}
+                id="color-select"
+                value={colorSeleccionado}
+                onChange={(evento) => { setColorSeleccionado(evento.target.value as ColorAnimal | 'todos'); setPagina(1) }}
               >
-                <option value="todos">Todos los estados</option>
-                <option value="disponible">Disponibles</option>
-                <option value="en_proceso">En proceso</option>
+                <option value="todos">Todos los colores</option>
+                {(opcionesQuery.data?.colores ?? []).map((color) => (
+                  <option key={color} value={color}>{formatearColor(color as ColorAnimal)}</option>
+                ))}
               </select>
             </div>
           </div>
         </div>
-
         <div className="pets-page__meta-bar">
           <span className="pets-page__count">
-            Mostrando <strong>{animalesFiltrados.length}</strong> de {animalesDeEjemplo.length} mascotas
+            <strong>{animalesFiltrados.length}</strong> de {mascotasQuery.data?.total ?? 0} mascotas disponibles en esta página
           </span>
         </div>
       </section>
-
-      {/* Grid de resultados */}
+      {mascotasQuery.isLoading ? <p role="status">Cargando mascotas...</p> : null}
+      {mascotasQuery.isError ? <p role="alert">{mascotasQuery.error.message}</p> : null}
+      {opcionesQuery.isError ? <p role="alert">No se pudieron cargar las opciones de filtros.</p> : null}
       {animalesFiltrados.length > 0 ? (
         <div className="pets-page__grid">
-          {animalesFiltrados.map((animal) => (
-            <PetCard key={animal.id} animal={animal} />
-          ))}
+          {animalesFiltrados.map((animal) => <PetCard key={animal.id} animal={animal} />)}
         </div>
-      ) : (
+      ) : !mascotasQuery.isLoading ? (
         <div className="pets-page__empty">
           <SlidersHorizontal size={40} strokeWidth={1.5} />
           <h3>No encontramos mascotas con esos criterios</h3>
@@ -200,7 +158,12 @@ export function PetsPage() {
             Ver todas las mascotas
           </button>
         </div>
-      )}
+      ) : null}
+      <div className="pets-page__pagination">
+        <button type="button" disabled={pagina <= 1 || mascotasQuery.isFetching} onClick={() => setPagina((actual) => actual - 1)}>Anterior</button>
+        <span>Página {mascotasQuery.data?.page ?? pagina} de {mascotasQuery.data?.totalPages ?? 1}</span>
+        <button type="button" disabled={pagina >= (mascotasQuery.data?.totalPages ?? 1) || mascotasQuery.isFetching} onClick={() => setPagina((actual) => actual + 1)}>Siguiente</button>
+      </div>
     </div>
   )
 }

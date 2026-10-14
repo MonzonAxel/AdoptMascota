@@ -7,11 +7,12 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/Button/Button'
 import { PetCard } from '@/components/PetCard/PetCard'
-import { animalesDeEjemplo } from '@/utils/datosAnimales'
+import { animalesService } from '@/services/animalesService'
 
 import './HomePage.css'
 
@@ -40,7 +41,12 @@ const adoptionSteps = [
 ]
 
 export function HomePage() {
-  const mascotasDestacadas = animalesDeEjemplo.slice(0, 3)
+  const mascotasQuery = useQuery({
+    queryKey: ['mascotas-destacadas'],
+    queryFn: () => animalesService.listarPublicos({ limit: 3 }),
+  })
+  const mascotasDestacadas = mascotasQuery.data?.items ?? []
+  const totalMascotas = mascotasQuery.data?.total ?? 0
 
   return (
     <div className="home-page">
@@ -124,15 +130,18 @@ export function HomePage() {
               <h2 id="featured-title">Mascotas destacadas</h2>
             </div>
             <Link className="home-page__view-all-link" to="/mascotas">
-              Ver todas ({animalesDeEjemplo.length})
+              Ver todas ({totalMascotas})
               <ArrowRight size={16} />
             </Link>
           </div>
 
           <div className="home-page__featured-grid">
-            {mascotasDestacadas.map((animal) => (
-              <PetCard key={animal.id} animal={animal} />
-            ))}
+            {mascotasQuery.isLoading ? <p role="status">Cargando mascotas...</p> : null}
+            {mascotasQuery.isError ? <p role="alert">{mascotasQuery.error.message}</p> : null}
+            {!mascotasQuery.isLoading && !mascotasQuery.isError && mascotasDestacadas.length === 0 ? (
+              <p>En este momento no hay mascotas disponibles.</p>
+            ) : null}
+            {mascotasDestacadas.map((animal) => <PetCard key={animal.id} animal={animal} />)}
           </div>
         </div>
       </section>

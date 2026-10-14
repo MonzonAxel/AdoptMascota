@@ -1,9 +1,11 @@
 import { ArrowLeft, Check, Heart, PawPrint, ShieldCheck, X } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { AdoptionModal } from '@/components/AdoptionModal/AdoptionModal'
 import { Button } from '@/components/Button/Button'
+import { animalesService } from '@/services/animalesService'
 import {
   formatearColor,
   formatearEdad,
@@ -11,17 +13,26 @@ import {
   formatearEstadoAnimal,
   formatearTamano,
 } from '@/utils/formateadoresAnimal'
-import { animalesDeEjemplo } from '@/utils/datosAnimales'
 
 import './PetDetailPage.css'
 
 export function PetDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const animal = animalesDeEjemplo.find((item) => String(item.id) === id)
+  const animalId = Number(id)
+  const animalQuery = useQuery({
+    queryKey: ['mascota', animalId],
+    queryFn: () => animalesService.obtenerPorId(animalId),
+    enabled: Number.isInteger(animalId) && animalId > 0,
+  })
+  const animal = animalQuery.data
   const [fotoActivaIndex, setFotoActivaIndex] = useState(0)
   const [modalAbierto, setModalAbierto] = useState(false)
 
-  if (!animal) {
+  if (animalQuery.isLoading) {
+    return <div className="page-container"><p role="status">Cargando perfil...</p></div>
+  }
+
+  if (animalQuery.isError || !animal) {
     return (
       <div className="page-container pet-detail-page pet-detail-page--missing">
         <p className="page-kicker">Perfil no encontrado</p>
