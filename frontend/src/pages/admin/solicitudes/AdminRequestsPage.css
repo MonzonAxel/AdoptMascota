@@ -1,3 +1,26 @@
+.admin-requests-page__toolbar,
+.admin-requests-page__pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 1rem 0;
+  color: var(--muted-foreground);
+  font-size: 0.84rem;
+}
+
+.admin-requests-page__toolbar select {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--input);
+  border-radius: 0.4rem;
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.admin-requests-page__pagination {
+  justify-content: flex-end;
+}
+
 .admin-requests-page__actions {
   display: flex;
   align-items: center;

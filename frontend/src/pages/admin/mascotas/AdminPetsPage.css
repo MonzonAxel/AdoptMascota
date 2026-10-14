@@ -2,6 +2,29 @@
   padding-bottom: 4rem;
 }
 
+.admin-pets-page__toolbar,
+.admin-pets-page__pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 1rem 0;
+  color: var(--muted-foreground);
+  font-size: 0.84rem;
+}
+
+.admin-pets-page__toolbar select {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--input);
+  border-radius: 0.4rem;
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.admin-pets-page__pagination {
+  justify-content: flex-end;
+}
+
 .admin-page__heading-row {
   display: flex;
   align-items: flex-start;
