@@ -8,6 +8,14 @@
   background: var(--card);
 }
 
+.admin-form--modal {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
 .admin-form__heading {
   display: grid;
   gap: 0.3rem;

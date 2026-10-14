@@ -51,7 +51,7 @@ export function UsuarioForm({ usuario, rolEditable = true, onGuardar, onCancelar
   return (
     <form
       id="usuario-form"
-      className="admin-form usuario-form"
+      className="admin-form admin-form--modal usuario-form"
       onSubmit={handleSubmit(guardarUsuario)}
       noValidate
       aria-labelledby="usuario-form-title"

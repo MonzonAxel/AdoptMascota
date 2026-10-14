@@ -87,8 +87,8 @@ export function AnimalForm({ animal, onGuardar, onFotoPrincipal, onEliminarFoto,
   }
 
   async function guardarAnimal(datos: AnimalValidado) {
-    const { fotos: fotosSeleccionadas, ...datosAnimal } = datos
-    await onGuardar(datosAnimal, fotosSeleccionadas)
+    const { estado, fotos: fotosSeleccionadas, ...datosAnimal } = datos
+    await onGuardar(animal ? { ...datosAnimal, estado } : datosAnimal, fotosSeleccionadas)
   }
 
   async function ejecutarAccionFoto(fotoId: number, accion: (id: number) => Promise<void>) {
@@ -103,7 +103,7 @@ export function AnimalForm({ animal, onGuardar, onFotoPrincipal, onEliminarFoto,
   return (
     <form
       id="animal-form"
-      className="admin-form animal-form"
+      className="admin-form admin-form--modal animal-form"
       onSubmit={handleSubmit(guardarAnimal)}
       noValidate
       aria-labelledby="animal-form-title"
@@ -323,14 +323,16 @@ export function AnimalForm({ animal, onGuardar, onFotoPrincipal, onEliminarFoto,
           ) : null}
         </div>
 
-        <div className="admin-form__field">
-          <label htmlFor="animal-estado">Estado</label>
-          <select id="animal-estado" {...register('estado')}>
-            <option value="disponible">Disponible</option>
-            <option value="en_proceso">En proceso</option>
-            <option value="adoptado">Adoptado</option>
-          </select>
-        </div>
+        {animal ? (
+          <div className="admin-form__field">
+            <label htmlFor="animal-estado">Estado</label>
+            <select id="animal-estado" {...register('estado')}>
+              <option value="disponible">Disponible</option>
+              <option value="en_proceso">En proceso</option>
+              <option value="adoptado">Adoptado</option>
+            </select>
+          </div>
+        ) : null}
 
         <div className="admin-form__field animal-form__health">
           <label>Salud</label>
