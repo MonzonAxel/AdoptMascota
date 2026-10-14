@@ -1,4 +1,5 @@
 import { UserRound } from 'lucide-react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
@@ -19,6 +20,7 @@ type DatosFormularioInicioSesion = z.infer<typeof esquemaInicioSesion>
 export function LoginPage() {
   const navigate = useNavigate()
   const { signIn } = useAuth()
+  const [mensajeError, setMensajeError] = useState('')
   const {
     register,
     handleSubmit,
@@ -31,9 +33,14 @@ export function LoginPage() {
     },
   })
 
-  function onSubmit() {
-    signIn()
-    navigate('/admin/mascotas')
+  async function onSubmit(datos: DatosFormularioInicioSesion) {
+    setMensajeError('')
+    try {
+      await signIn(datos.correoElectronico, datos.contrasena)
+      navigate('/admin/mascotas')
+    } catch (error) {
+      setMensajeError(error instanceof Error ? error.message : 'No se pudo iniciar sesión.')
+    }
   }
 
   return (
@@ -82,6 +89,7 @@ export function LoginPage() {
         <Button className="login-page__submit" type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
         </Button>
+        {mensajeError ? <p className="login-page__error" role="alert">{mensajeError}</p> : null}
 
         <div className="login-page__footer">
           <button
