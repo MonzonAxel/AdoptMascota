@@ -1,42 +1,48 @@
-import { ImagePlus, X } from 'lucide-react'
+import { ImagePlus, Star, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 
 import { Button } from '@/components/Button/Button'
-import type { DatosCrearAnimal } from '@/types/animal'
+import type { Animal, DatosCrearAnimal } from '@/types/animal'
 import { esquemaAnimal, type AnimalValidado, type DatosFormularioAnimal } from '@/schemas/animalSchema'
 
 import '../forms/adminForms.css'
 import './AnimalForm.css'
 
 type AnimalFormProps = {
-  onGuardar: (datos: DatosCrearAnimal, fotos: File[]) => void
+  animal?: Animal
+  onGuardar: (datos: DatosCrearAnimal, fotos: File[]) => Promise<void>
+  onFotoPrincipal: (fotoId: number) => Promise<void>
+  onEliminarFoto: (fotoId: number) => Promise<void>
   onCancelar: () => void
 }
 
-export function AnimalForm({ onGuardar, onCancelar }: AnimalFormProps) {
+export function AnimalForm({ animal, onGuardar, onFotoPrincipal, onEliminarFoto, onCancelar }: AnimalFormProps) {
   const [previsualizaciones, setPrevisualizaciones] = useState<string[]>([])
+  const [fotoEnAccion, setFotoEnAccion] = useState<number | null>(null)
   const urlsPrevisualizacion = useRef<string[]>([])
   const {
     getValues,
     register,
     setValue,
+    setError,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<DatosFormularioAnimal, unknown, AnimalValidado>({
     resolver: zodResolver(esquemaAnimal),
     defaultValues: {
-      nombre: '',
-      especie: '',
-      sexo: '',
-      raza: '',
-      edad: '',
-      color: '',
-      tamano: '',
-      vacunado: false,
-      esterilizado: false,
-      comportamiento: '',
+      nombre: animal?.nombre ?? '',
+      especie: animal?.especie ?? '',
+      sexo: animal?.sexo ?? '',
+      raza: animal?.raza ?? '',
+      edad: animal?.edad?.toString() ?? '',
+      color: animal?.color ?? '',
+      tamano: animal?.tamano ?? '',
+      estado: animal?.estado ?? 'disponible',
+      vacunado: animal?.vacunado ?? false,
+      esterilizado: animal?.esterilizado ?? false,
+      comportamiento: animal?.comportamiento ?? '',
       fotos: [],
     },
   })
@@ -46,7 +52,11 @@ export function AnimalForm({ onGuardar, onCancelar }: AnimalFormProps) {
   }, [])
 
   function seleccionarFotos(event: React.ChangeEvent<HTMLInputElement>) {
-    const seleccionadas = Array.from(event.currentTarget.files ?? [])
+    const limite = Math.max(0, 6 - (animal?.fotos.length ?? 0) - getValues('fotos').length)
+    const seleccionadas = Array.from(event.currentTarget.files ?? []).slice(0, limite)
+    if (event.currentTarget.files && event.currentTarget.files.length > limite) {
+      setError('fotos', { message: 'Una mascota puede tener hasta 6 fotos.' })
+    }
     const nuevasPrevisualizaciones = seleccionadas.map((foto) => URL.createObjectURL(foto))
     urlsPrevisualizacion.current.push(...nuevasPrevisualizaciones)
     setPrevisualizaciones((actuales) => [...actuales, ...nuevasPrevisualizaciones])
@@ -76,9 +86,18 @@ export function AnimalForm({ onGuardar, onCancelar }: AnimalFormProps) {
     )
   }
 
-  function guardarAnimal(datos: AnimalValidado) {
+  async function guardarAnimal(datos: AnimalValidado) {
     const { fotos: fotosSeleccionadas, ...datosAnimal } = datos
-    onGuardar(datosAnimal, fotosSeleccionadas)
+    await onGuardar(datosAnimal, fotosSeleccionadas)
+  }
+
+  async function ejecutarAccionFoto(fotoId: number, accion: (id: number) => Promise<void>) {
+    setFotoEnAccion(fotoId)
+    try {
+      await accion(fotoId)
+    } finally {
+      setFotoEnAccion(null)
+    }
   }
 
   return (
@@ -90,7 +109,7 @@ export function AnimalForm({ onGuardar, onCancelar }: AnimalFormProps) {
       aria-labelledby="animal-form-title"
     >
       <p id="animal-form-title" className="admin-form__title">
-        Formulario de carga del animal
+        {animal ? `Editar ${animal.nombre}` : 'Formulario de carga del animal'}
       </p>
 
       <div className="admin-form__grid animal-form__grid">
@@ -106,7 +125,7 @@ export function AnimalForm({ onGuardar, onCancelar }: AnimalFormProps) {
             />
             <ImagePlus size={25} aria-hidden="true" />
             <span>Subir imágenes</span>
-            <small>Hasta 5 imágenes, 5 MB cada una</small>
+            <small>JPG, PNG o WEBP · hasta 6 fotos en total · máximo 5 MB por foto</small>
           </label>
           {previsualizaciones.length > 0 ? (
             <div className="animal-form__previews">
@@ -129,6 +148,37 @@ export function AnimalForm({ onGuardar, onCancelar }: AnimalFormProps) {
                   </div>
                 )
               })}
+            </div>
+          ) : null}
+          {animal?.fotos.length ? (
+            <div className="animal-form__previews" aria-label="Fotos actuales">
+              {animal.fotos.map((foto) => (
+                <div className="animal-form__preview" key={foto.id}>
+                  <img src={foto.url} alt={`Foto actual de ${animal.nombre}`} />
+                  <Button
+                    className="animal-form__remove-photo"
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={foto.esPrincipal ? 'Foto principal' : `Marcar foto ${foto.id} como principal`}
+                    disabled={fotoEnAccion !== null}
+                    onClick={() => ejecutarAccionFoto(foto.id, onFotoPrincipal)}
+                  >
+                    <Star size={15} fill={foto.esPrincipal ? 'currentColor' : 'none'} aria-hidden="true" />
+                  </Button>
+                  <Button
+                    className="animal-form__remove-photo"
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Eliminar foto ${foto.id}`}
+                    disabled={fotoEnAccion !== null}
+                    onClick={() => ejecutarAccionFoto(foto.id, onEliminarFoto)}
+                  >
+                    <Trash2 size={15} aria-hidden="true" />
+                  </Button>
+                </div>
+              ))}
             </div>
           ) : null}
           {errors.fotos ? (
@@ -169,7 +219,6 @@ export function AnimalForm({ onGuardar, onCancelar }: AnimalFormProps) {
             <option value="">Seleccionar especie</option>
             <option value="perro">Perro</option>
             <option value="gato">Gato</option>
-            <option value="otro">Otro</option>
           </select>
           {errors.especie ? (
             <span id="animal-especie-error" className="admin-form__error" role="alert">
@@ -235,11 +284,17 @@ export function AnimalForm({ onGuardar, onCancelar }: AnimalFormProps) {
             aria-describedby={errors.color ? 'animal-color-error' : undefined}
           >
             <option value="">Seleccionar color</option>
-            <option value="marron">Marrón</option>
-            <option value="blanco">Blanco</option>
             <option value="negro">Negro</option>
-            <option value="beige">Beige</option>
-            <option value="multicolor">Multicolor</option>
+            <option value="blanco">Blanco</option>
+            <option value="marron">Marrón</option>
+            <option value="gris">Gris</option>
+            <option value="naranja">Naranja</option>
+            <option value="crema">Crema</option>
+            <option value="dorado">Dorado</option>
+            <option value="atigrado">Atigrado</option>
+            <option value="manchado">Manchado</option>
+            <option value="tricolor">Tricolor</option>
+            <option value="otro">Otro</option>
           </select>
           {errors.color ? (
             <span id="animal-color-error" className="admin-form__error" role="alert">
@@ -266,6 +321,15 @@ export function AnimalForm({ onGuardar, onCancelar }: AnimalFormProps) {
               {errors.tamano.message}
             </span>
           ) : null}
+        </div>
+
+        <div className="admin-form__field">
+          <label htmlFor="animal-estado">Estado</label>
+          <select id="animal-estado" {...register('estado')}>
+            <option value="disponible">Disponible</option>
+            <option value="en_proceso">En proceso</option>
+            <option value="adoptado">Adoptado</option>
+          </select>
         </div>
 
         <div className="admin-form__field animal-form__health">

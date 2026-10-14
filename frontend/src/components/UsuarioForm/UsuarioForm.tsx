@@ -2,41 +2,49 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 
 import { Button } from '@/components/Button/Button'
-import type { DatosCrearUsuario } from '@/types/usuario'
+import type { DatosActualizarUsuario, DatosCrearUsuario, Usuario } from '@/types/usuario'
 import { esquemaUsuario, type DatosFormularioUsuario, type UsuarioValidado } from '@/schemas/usuarioSchema'
 
 import '../forms/adminForms.css'
 import './UsuarioForm.css'
 
 type UsuarioFormProps = {
-  onGuardar: (datos: DatosCrearUsuario) => void
+  usuario?: Usuario
+  rolEditable?: boolean
+  onGuardar: (datos: DatosCrearUsuario | DatosActualizarUsuario) => Promise<void>
   onCancelar: () => void
 }
 
-export function UsuarioForm({ onGuardar, onCancelar }: UsuarioFormProps) {
+export function UsuarioForm({ usuario, rolEditable = true, onGuardar, onCancelar }: UsuarioFormProps) {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<DatosFormularioUsuario, unknown, UsuarioValidado>({
     resolver: zodResolver(esquemaUsuario),
     defaultValues: {
-      nombre: '',
-      apellido: '',
-      correoElectronico: '',
-      rol: '',
+      nombre: usuario?.perfil.nombre ?? '',
+      apellido: usuario?.perfil.apellido ?? '',
+      correoElectronico: usuario?.correoElectronico ?? '',
+      rol: usuario?.rol ?? '',
       contrasena: '',
       repetirContrasena: '',
     },
   })
 
-  function guardarUsuario(datos: UsuarioValidado) {
-    onGuardar({
+  async function guardarUsuario(datos: UsuarioValidado) {
+    if (!usuario && !datos.contrasena) {
+      setError('contrasena', { message: 'La contraseña es obligatoria al crear el usuario.' })
+      return
+    }
+
+    await onGuardar({
       nombre: datos.nombre,
       apellido: datos.apellido,
       correoElectronico: datos.correoElectronico,
-      rol: datos.rol,
-      contrasena: datos.contrasena,
+      ...(rolEditable && { rol: datos.rol || usuario?.rol || 'administrativo' }),
+      ...(datos.contrasena ? { contrasena: datos.contrasena } : {}),
     })
   }
 
@@ -50,7 +58,7 @@ export function UsuarioForm({ onGuardar, onCancelar }: UsuarioFormProps) {
     >
       <div className="admin-form__heading">
         <p id="usuario-form-title" className="admin-form__title">
-          Formulario de carga de usuario
+          {usuario ? `Editar ${usuario.perfil.nombre} ${usuario.perfil.apellido}` : 'Formulario de carga de usuario'}
         </p>
         <p className="admin-form__hint">El correo electrónico también será el usuario de acceso.</p>
       </div>
@@ -110,6 +118,7 @@ export function UsuarioForm({ onGuardar, onCancelar }: UsuarioFormProps) {
           <select
             id="usuario-rol"
             {...register('rol')}
+            disabled={!rolEditable}
             aria-invalid={Boolean(errors.rol)}
             aria-describedby={errors.rol ? 'usuario-rol-error' : undefined}
           >
@@ -125,7 +134,7 @@ export function UsuarioForm({ onGuardar, onCancelar }: UsuarioFormProps) {
         </div>
 
         <div className="admin-form__field">
-          <label htmlFor="usuario-contrasena">Contraseña</label>
+          <label htmlFor="usuario-contrasena">{usuario ? 'Nueva contraseña (opcional)' : 'Contraseña'}</label>
           <input
             id="usuario-contrasena"
             type="password"
