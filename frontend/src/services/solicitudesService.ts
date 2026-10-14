@@ -2,49 +2,43 @@ import { clienteApi } from '@/services/api'
 import type {
   DatosCrearObservacion,
   DatosCrearSolicitud,
+  DatosCambioEstado,
   EstadoSolicitud,
   FiltrosSolicitudes,
   ObservacionSolicitud,
-  ResumenSolicitudAdopcion,
+  PaginaSolicitudes,
   SolicitudAdopcion,
 } from '@/types/solicitud'
 
 export const solicitudesService = {
   async listar(filtros: FiltrosSolicitudes = {}) {
-    const { data } = await clienteApi.get<ResumenSolicitudAdopcion[]>('/solicitudes-adopcion', {
+    const { data } = await clienteApi.get<PaginaSolicitudes>('/solicitudes', {
       params: filtros,
     })
     return data
   },
 
   async obtenerPorId(id: number) {
-    const { data } = await clienteApi.get<SolicitudAdopcion>(`/solicitudes-adopcion/${id}`)
+    const { data } = await clienteApi.get<SolicitudAdopcion>(`/solicitudes/${id}`)
     return data
   },
 
   async crear(datos: DatosCrearSolicitud) {
-    const { data } = await clienteApi.post<SolicitudAdopcion>('/solicitudes-adopcion', datos)
+    const { data } = await clienteApi.post<{ id: number; estado: EstadoSolicitud }>('/solicitudes', datos)
     return data
   },
 
-  async actualizarEstado(id: number, estado: EstadoSolicitud) {
-    const { data } = await clienteApi.patch<SolicitudAdopcion>(
-      `/solicitudes-adopcion/${id}/estado`,
-      { estado },
-    )
-    return data
-  },
-
-  async listarObservaciones(id: number) {
-    const { data } = await clienteApi.get<ObservacionSolicitud[]>(
-      `/solicitudes-adopcion/${id}/observaciones`,
+  async actualizarEstado(id: number, datos: DatosCambioEstado) {
+    const { data } = await clienteApi.put<SolicitudAdopcion>(
+      `/solicitudes/${id}/estado`,
+      datos,
     )
     return data
   },
 
   async agregarObservacion(id: number, datos: DatosCrearObservacion) {
     const { data } = await clienteApi.post<ObservacionSolicitud>(
-      `/solicitudes-adopcion/${id}/observaciones`,
+      `/solicitudes/${id}/observaciones`,
       datos,
     )
     return data
