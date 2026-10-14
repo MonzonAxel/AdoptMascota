@@ -3,7 +3,6 @@ import type { ColorAnimal, EstadoAnimal, TipoEspecieAnimal, TipoTamanoAnimal } f
 const nombresEspecies: Record<TipoEspecieAnimal, string> = {
   perro: 'Perro',
   gato: 'Gato',
-  otro: 'Otro',
 }
 
 const nombresTamanos: Record<TipoTamanoAnimal, string> = {
@@ -19,11 +18,17 @@ const nombresEstados: Record<EstadoAnimal, string> = {
 }
 
 const nombresColores: Record<ColorAnimal, string> = {
-  marron: 'Marrón',
-  blanco: 'Blanco',
   negro: 'Negro',
-  beige: 'Beige',
-  multicolor: 'Multicolor',
+  blanco: 'Blanco',
+  marron: 'Marrón',
+  gris: 'Gris',
+  naranja: 'Naranja',
+  crema: 'Crema',
+  dorado: 'Dorado',
+  atigrado: 'Atigrado',
+  manchado: 'Manchado',
+  tricolor: 'Tricolor',
+  otro: 'Otro',
 }
 
 export function formatearEspecie(especie: TipoEspecieAnimal): string {
