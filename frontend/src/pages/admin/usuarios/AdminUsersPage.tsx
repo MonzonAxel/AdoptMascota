@@ -2,9 +2,11 @@ import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
+import { AdminDialog } from '@/components/AdminDialog/AdminDialog'
 import { Button } from '@/components/Button/Button'
 import { PageHeader } from '@/components/PageHeader/PageHeader'
 import { UsuarioForm } from '@/components/UsuarioForm/UsuarioForm'
+import { useAdminDialog } from '@/hooks/useAdminDialog'
 import { useAuth } from '@/hooks/useAuth'
 import { usuariosService } from '@/services/usuariosService'
 import type { DatosActualizarUsuario, DatosCrearUsuario, Usuario } from '@/types/usuario'
@@ -13,6 +15,7 @@ import './AdminUsersPage.css'
 
 export function AdminUsersPage() {
   const queryClient = useQueryClient()
+  const feedback = useAdminDialog()
   const { usuario: usuarioActual } = useAuth()
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [usuarioEnEdicion, setUsuarioEnEdicion] = useState<Usuario | null>(null)
@@ -36,6 +39,7 @@ export function AdminUsersPage() {
 
   async function guardarUsuario(datos: DatosCrearUsuario | DatosActualizarUsuario) {
     setMensajeError('')
+    const esEdicion = Boolean(usuarioEnEdicion)
     try {
       if (usuarioEnEdicion) {
         await actualizarMutation.mutateAsync({ id: usuarioEnEdicion.id, datos })
@@ -44,6 +48,10 @@ export function AdminUsersPage() {
       }
       setMostrarFormulario(false)
       setUsuarioEnEdicion(null)
+      feedback.showSuccess(
+        esEdicion ? 'Usuario actualizado' : 'Usuario creado',
+        esEdicion ? 'Los cambios se guardaron correctamente.' : 'El usuario ya puede acceder con sus credenciales.',
+      )
     } catch (error) {
       setMensajeError(error instanceof Error ? error.message : 'No se pudo guardar el usuario.')
     }
@@ -57,9 +65,20 @@ export function AdminUsersPage() {
 
   function confirmarBaja(usuario: Usuario) {
     if (usuario.id === usuarioActual?.id) return
-    if (window.confirm(`¿Dar de baja a ${usuario.perfil.nombre} ${usuario.perfil.apellido}?`)) {
-      eliminarMutation.mutate(usuario.id)
-    }
+    const nombre = `${usuario.perfil.nombre} ${usuario.perfil.apellido}`
+    feedback.showConfirmation(
+      'Confirmar baja de usuario',
+      `¿Querés dar de baja a ${nombre}? Ya no podrá iniciar sesión.`,
+      async () => {
+        try {
+          await eliminarMutation.mutateAsync(usuario.id)
+          feedback.showSuccess('Usuario dado de baja', `${nombre} ya no tiene acceso al sistema.`)
+        } catch (error) {
+          feedback.showError('No se pudo dar de baja al usuario', error, 'Revisá los permisos y volvé a intentarlo.')
+        }
+      },
+      'Dar de baja',
+    )
   }
 
   return (
@@ -84,14 +103,23 @@ export function AdminUsersPage() {
         </Button>
       </div>
       {mostrarFormulario ? (
-        <UsuarioForm
-          usuario={usuarioEnEdicion ?? undefined}
-          rolEditable={usuarioEnEdicion?.id !== usuarioActual?.id}
-          onGuardar={guardarUsuario}
-          onCancelar={cancelarFormulario}
-        />
+        <AdminDialog
+          open
+          variant={mensajeError ? 'error' : 'form'}
+          title={mensajeError ? 'No se pudo guardar el usuario' : usuarioEnEdicion ? 'Editar usuario' : 'Nuevo usuario'}
+          message={mensajeError || 'Completá los datos de acceso y el rol correspondiente.'}
+          onClose={cancelarFormulario}
+          size="wide"
+        >
+          <UsuarioForm
+            key={usuarioEnEdicion?.id ?? 'nuevo'}
+            usuario={usuarioEnEdicion ?? undefined}
+            rolEditable={usuarioEnEdicion?.id !== usuarioActual?.id}
+            onGuardar={guardarUsuario}
+            onCancelar={cancelarFormulario}
+          />
+        </AdminDialog>
       ) : null}
-      {mensajeError ? <p role="alert">{mensajeError}</p> : null}
       {usuariosQuery.isError ? <p role="alert">{usuariosQuery.error.message}</p> : null}
       {eliminarMutation.isError ? <p role="alert">{eliminarMutation.error.message}</p> : null}
       <section className="admin-table-wrap" aria-label="Usuarios administrativos">
@@ -148,6 +176,9 @@ export function AdminUsersPage() {
           </tbody>
         </table>
       </section>
+      {feedback.dialog ? (
+        <AdminDialog open {...feedback.dialog} onClose={feedback.closeDialog} />
+      ) : null}
     </div>
   )
 }

@@ -3,9 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { AdminDialog } from '@/components/AdminDialog/AdminDialog'
 import { Button } from '@/components/Button/Button'
 import { StatusBadge } from '@/components/StatusBadge/StatusBadge'
 import type { EstadoSolicitud } from '@/types/solicitud'
+import { useAdminDialog } from '@/hooks/useAdminDialog'
 import { solicitudesService } from '@/services/solicitudesService'
 import { formatearFecha } from '@/utils/formatearFecha'
 
@@ -16,6 +18,13 @@ const etiquetasEstado: Record<EstadoSolicitud, { etiqueta: string; tono: 'succes
   en_revision: { etiqueta: 'En revisión', tono: 'warning' },
   aprobada: { etiqueta: 'Aprobada', tono: 'success' },
   rechazada: { etiqueta: 'Rechazada', tono: 'danger' },
+}
+
+const transicionesPermitidas: Record<EstadoSolicitud, EstadoSolicitud[]> = {
+  pendiente: ['pendiente', 'en_revision', 'aprobada', 'rechazada'],
+  en_revision: ['en_revision', 'pendiente', 'aprobada', 'rechazada'],
+  aprobada: ['aprobada'],
+  rechazada: ['rechazada'],
 }
 
 type CampoSolicitudProps = {
@@ -37,6 +46,7 @@ export function AdminRequestDetailPage() {
   const { id } = useParams<{ id: string }>()
   const solicitudId = Number(id)
   const queryClient = useQueryClient()
+  const feedback = useAdminDialog()
   const [estadoEditado, setEstadoEditado] = useState<EstadoSolicitud | null>(null)
   const [textoObservacion, setTextoObservacion] = useState('')
   const solicitudQuery = useQuery({
@@ -46,6 +56,7 @@ export function AdminRequestDetailPage() {
   })
   const solicitud = solicitudQuery.data
   const estadoSeleccionado = estadoEditado ?? solicitud?.estado ?? 'pendiente'
+  const estadoEsFinal = solicitud?.estado === 'aprobada' || solicitud?.estado === 'rechazada'
   const estadoMutation = useMutation({
     mutationFn: () => solicitudesService.actualizarEstado(solicitudId, { estado: estadoSeleccionado }),
     onSuccess: (solicitudActualizada) => {
@@ -61,6 +72,34 @@ export function AdminRequestDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['solicitud', solicitudId] })
     },
   })
+
+  function confirmarCambioEstado() {
+    if (!solicitud || estadoSeleccionado === solicitud.estado) return
+    const nuevoEstado = etiquetasEstado[estadoSeleccionado].etiqueta
+    feedback.showConfirmation(
+      `¿Cambiar a ${nuevoEstado.toLowerCase()}?`,
+      `La solicitud de ${solicitud.nombre_apellido} cambiará de ${etiquetasEstado[solicitud.estado].etiqueta.toLowerCase()} a ${nuevoEstado.toLowerCase()}.`,
+      async () => {
+        try {
+          await estadoMutation.mutateAsync()
+          feedback.showSuccess('Estado actualizado', `La solicitud ahora está ${nuevoEstado.toLowerCase()}.`)
+        } catch (error) {
+          feedback.showError('No se pudo cambiar el estado', error, 'Revisá el estado actual e intentá nuevamente.')
+        }
+      },
+      'Confirmar cambio',
+    )
+  }
+
+  async function guardarObservacion() {
+    try {
+      await observacionMutation.mutateAsync()
+      feedback.showSuccess('Observación agregada', 'La nota quedó guardada en el seguimiento de la solicitud.')
+    } catch (error) {
+      feedback.showError('No se pudo agregar la observación', error, 'Revisá el texto e intentá nuevamente.')
+    }
+  }
+
   if (solicitudQuery.isLoading) {
     return <p role="status">Cargando solicitud...</p>
   }
@@ -107,14 +146,14 @@ export function AdminRequestDetailPage() {
           <select
             id="solicitud-estado"
             value={estadoSeleccionado}
+            disabled={estadoEsFinal || estadoMutation.isPending}
             onChange={(evento) => {
               setEstadoEditado(evento.target.value as EstadoSolicitud)
             }}
           >
-            <option value="pendiente">Pendiente</option>
-            <option value="en_revision">En revisión</option>
-            <option value="aprobada">Aprobada</option>
-            <option value="rechazada">Rechazada</option>
+            {transicionesPermitidas[solicitud.estado].map((estado) => (
+              <option key={estado} value={estado}>{etiquetasEstado[estado].etiqueta}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -191,30 +230,42 @@ export function AdminRequestDetailPage() {
         ) : null}
       </div>
 
-      <section aria-labelledby="observaciones-title">
-        <h2 id="observaciones-title">Observaciones</h2>
-        {solicitud.observaciones.map((observacion) => (
-          <article key={observacion.id}>
-            <p>{observacion.observacion}</p>
-            <small>{observacion.autor?.nombre ?? 'Personal'} · {formatearFecha(observacion.creado)}</small>
-          </article>
-        ))}
-        <label htmlFor="observacion-nueva">Agregar observación</label>
-        <textarea
-          id="observacion-nueva"
-          rows={3}
-          value={textoObservacion}
-          onChange={(evento) => setTextoObservacion(evento.target.value)}
-        />
-        {observacionMutation.isError ? <p role="alert">{observacionMutation.error.message}</p> : null}
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!textoObservacion.trim() || observacionMutation.isPending}
-          onClick={() => observacionMutation.mutate()}
-        >
-          Agregar observación
-        </Button>
+      <section className="solicitud-detail__notes" aria-labelledby="observaciones-title">
+        <div className="solicitud-detail__section-heading">
+          <div>
+            <p className="page-kicker">Seguimiento interno</p>
+            <h2 id="observaciones-title">Observaciones</h2>
+          </div>
+          <span>{solicitud.observaciones.length}</span>
+        </div>
+        {solicitud.observaciones.length ? (
+          <div className="solicitud-detail__note-list">
+            {solicitud.observaciones.map((observacion) => (
+              <article className="solicitud-detail__note" key={observacion.id}>
+                <p>{observacion.observacion}</p>
+                <small>{observacion.autor?.nombre ?? 'Personal'} · {formatearFecha(observacion.creado)}</small>
+              </article>
+            ))}
+          </div>
+        ) : <p className="solicitud-detail__notes-empty">Todavía no hay observaciones.</p>}
+        <div className="solicitud-detail__note-form">
+          <label htmlFor="observacion-nueva">Agregar observación</label>
+          <textarea
+            id="observacion-nueva"
+            rows={3}
+            value={textoObservacion}
+            onChange={(evento) => setTextoObservacion(evento.target.value)}
+            placeholder="Dejá una nota útil para el seguimiento del caso."
+          />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!textoObservacion.trim() || observacionMutation.isPending}
+            onClick={guardarObservacion}
+          >
+            {observacionMutation.isPending ? 'Guardando...' : 'Agregar observación'}
+          </Button>
+        </div>
       </section>
 
       <section aria-labelledby="historial-title">
@@ -228,15 +279,17 @@ export function AdminRequestDetailPage() {
       </section>
 
       <div className="solicitud-detail__actions">
-        {estadoMutation.isError ? <p role="alert">{estadoMutation.error.message}</p> : null}
         <Button
           type="button"
-          disabled={estadoMutation.isPending || estadoSeleccionado === solicitud.estado}
-          onClick={() => estadoMutation.mutate()}
+          disabled={estadoMutation.isPending || estadoEsFinal || estadoSeleccionado === solicitud.estado}
+          onClick={confirmarCambioEstado}
         >
           {estadoMutation.isPending ? 'Guardando...' : 'Guardar estado'}
         </Button>
       </div>
+      {feedback.dialog ? (
+        <AdminDialog open {...feedback.dialog} onClose={feedback.closeDialog} />
+      ) : null}
     </section>
   )
 }

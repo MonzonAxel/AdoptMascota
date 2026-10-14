@@ -3,9 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { AdminDialog } from '@/components/AdminDialog/AdminDialog'
 import { PageHeader } from '@/components/PageHeader/PageHeader'
 import { StatusBadge } from '@/components/StatusBadge/StatusBadge'
 import { Button } from '@/components/Button/Button'
+import { useAdminDialog } from '@/hooks/useAdminDialog'
 import type { EstadoSolicitud } from '@/types/solicitud'
 import { formatearFecha } from '@/utils/formatearFecha'
 import { solicitudesService } from '@/services/solicitudesService'
@@ -21,6 +23,7 @@ const etiquetasEstado: Record<EstadoSolicitud, { label: string; tone: 'success' 
 
 export function AdminRequestsPage() {
   const queryClient = useQueryClient()
+  const feedback = useAdminDialog()
   const [estadoFiltro, setEstadoFiltro] = useState<EstadoSolicitud | 'todos'>('todos')
   const [pagina, setPagina] = useState(1)
   const solicitudesQuery = useQuery({
@@ -37,6 +40,23 @@ export function AdminRequestsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['solicitudes'] }),
   })
   const solicitudes = solicitudesQuery.data?.items ?? []
+
+  function confirmarCambioEstado(id: number, nombre: string, estado: 'aprobada' | 'rechazada') {
+    const accion = etiquetasEstado[estado].label.toLowerCase()
+    feedback.showConfirmation(
+      `¿${estado === 'aprobada' ? 'Aprobar' : 'Rechazar'} solicitud?`,
+      `Vas a ${accion} la solicitud de ${nombre}. Esta decisión cambiará la disponibilidad de la mascota.`,
+      async () => {
+        try {
+          await estadoMutation.mutateAsync({ id, estado })
+          feedback.showSuccess(`Solicitud ${accion}`, 'El estado y la disponibilidad de la mascota se actualizaron.')
+        } catch (error) {
+          feedback.showError('No se pudo cambiar el estado', error, 'Revisá el estado actual e intentá nuevamente.')
+        }
+      },
+      estado === 'aprobada' ? 'Aprobar solicitud' : 'Rechazar solicitud',
+    )
+  }
 
   return (
     <div className="admin-page admin-requests-page">
@@ -64,9 +84,6 @@ export function AdminRequestsPage() {
       </div>
       {solicitudesQuery.isError ? (
         <p role="alert">{solicitudesQuery.error.message}</p>
-      ) : null}
-      {estadoMutation.isError ? (
-        <p role="alert">{estadoMutation.error.message}</p>
       ) : null}
       <section className="admin-table-wrap" aria-label="Solicitudes de adopcion">
         <table className="admin-table">
@@ -116,7 +133,7 @@ export function AdminRequestsPage() {
                             size="icon"
                             aria-label="Aprobar solicitud"
                             disabled={estadoMutation.isPending}
-                            onClick={() => estadoMutation.mutate({ id: solicitud.id, estado: 'aprobada' })}
+                            onClick={() => confirmarCambioEstado(solicitud.id, solicitud.nombre_apellido, 'aprobada')}
                           >
                             <Check size={16} aria-hidden="true" />
                           </Button>
@@ -125,7 +142,7 @@ export function AdminRequestsPage() {
                             size="icon"
                             aria-label="Rechazar solicitud"
                             disabled={estadoMutation.isPending}
-                            onClick={() => estadoMutation.mutate({ id: solicitud.id, estado: 'rechazada' })}
+                            onClick={() => confirmarCambioEstado(solicitud.id, solicitud.nombre_apellido, 'rechazada')}
                           >
                             <X size={16} aria-hidden="true" />
                           </Button>
@@ -162,6 +179,9 @@ export function AdminRequestsPage() {
           <ChevronRight size={16} aria-hidden="true" />
         </Button>
       </div>
+      {feedback.dialog ? (
+        <AdminDialog open {...feedback.dialog} onClose={feedback.closeDialog} />
+      ) : null}
     </div>
   )
 }
