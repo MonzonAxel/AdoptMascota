@@ -14,7 +14,7 @@ const adminLinks = [
 ]
 
 export function PrivateLayout() {
-  const { signOut } = useAuth()
+  const { signOut, usuario } = useAuth()
   const { pathname } = useLocation()
 
   return (
@@ -27,7 +27,7 @@ export function PrivateLayout() {
             <LayoutDashboard size={17} aria-hidden="true" />
             Resumen
           </NavLink>
-          {adminLinks.map(({ to, label, icon: Icon }) => (
+          {adminLinks.filter(({ to }) => to !== '/admin/usuarios' || usuario?.rol === 'admin').map(({ to, label, icon: Icon }) => (
             <NavLink
               className={({ isActive }) =>
                 `private-layout__link${
@@ -45,7 +45,7 @@ export function PrivateLayout() {
           ))}
         </nav>
         <div className="private-layout__sidebar-footer">
-          <Button className="private-layout__logout" variant="ghost" onClick={signOut}>
+          <Button className="private-layout__logout" variant="ghost" onClick={() => { void signOut() }}>
             <LogOut size={17} aria-hidden="true" />
             Cerrar sesion
           </Button>
@@ -54,7 +54,9 @@ export function PrivateLayout() {
       <main className="private-layout__main">
         <header className="private-layout__topbar">
           <span className="private-layout__eyebrow">Panel de gestion</span>
-          <span className="private-layout__user">Administrador</span>
+          <span className="private-layout__user">
+            {usuario?.nombre ?? 'Usuario'} · {usuario?.rol === 'admin' ? 'Administrador' : 'Administrativo'}
+          </span>
         </header>
         <div className="private-layout__content">
           <Outlet />
