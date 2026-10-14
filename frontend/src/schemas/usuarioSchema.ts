@@ -11,13 +11,18 @@ export const esquemaUsuario = z
       .pipe(z.enum(['admin', 'administrativo'])),
     contrasena: z
       .string()
-      .min(8, 'La contraseña debe tener al menos 8 caracteres.')
+      .refine((valor) => valor === '' || valor.length >= 8, 'La contraseña debe tener al menos 8 caracteres.')
       .max(72, 'La contraseña no puede superar los 72 caracteres.'),
     repetirContrasena: z.string(),
   })
-  .refine((datos) => datos.contrasena === datos.repetirContrasena, {
-    message: 'Las contraseñas no coinciden.',
-    path: ['repetirContrasena'],
+  .superRefine((datos, contexto) => {
+    if (datos.contrasena && datos.contrasena !== datos.repetirContrasena) {
+      contexto.addIssue({
+        code: 'custom',
+        message: 'Las contraseñas no coinciden.',
+        path: ['repetirContrasena'],
+      })
+    }
   })
 
 export type DatosFormularioUsuario = z.input<typeof esquemaUsuario>
