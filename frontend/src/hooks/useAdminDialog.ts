@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import type { AdminDialogConfig } from '@/components/AdminDialog/AdminDialog'
+import type { AdminDialogConfig, AdminDialogTone } from '@/components/AdminDialog/AdminDialog'
 
 export function useAdminDialog() {
   const [dialog, setDialog] = useState<AdminDialogConfig | null>(null)
@@ -19,8 +19,9 @@ export function useAdminDialog() {
     message: string,
     onConfirm: () => void | Promise<void>,
     confirmLabel = 'Confirmar',
+    confirmTone: AdminDialogTone = 'warning',
   ) {
-    setDialog({ variant: 'confirm', title, message, onConfirm, confirmLabel })
+    setDialog({ variant: 'confirm', title, message, onConfirm, confirmLabel, confirmTone })
   }
 
   function closeDialog() {

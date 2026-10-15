@@ -160,6 +160,74 @@
   gap: 1.5rem;
 }
 
+.pets-page__pagination {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 2.25rem auto 0;
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--card);
+  box-shadow: 0 4px 14px rgb(38 50 56 / 5%);
+}
+
+.pets-page__pagination button {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: var(--secondary);
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.pets-page__pagination button:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.pets-page__pagination button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ring) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.pets-page__pagination button:disabled {
+  border-color: var(--border);
+  background: var(--background);
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.pets-page__pagination-status {
+  display: flex;
+  min-width: 7rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0 0.35rem;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.pets-page__pagination-status strong {
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+
 .pets-page__empty {
   display: flex;
   flex-direction: column;
@@ -247,5 +315,24 @@
 
   .pets-page__grid {
     grid-template-columns: 1fr;
+  }
+
+  .pets-page__pagination {
+    width: 100%;
+    gap: 0.25rem;
+    padding: 0.3rem;
+  }
+
+  .pets-page__pagination button {
+    gap: 0.25rem;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .pets-page__pagination-status {
+    min-width: 0;
+    gap: 0.22rem;
+    padding: 0 0.15rem;
+    font-size: 0.76rem;
   }
 }

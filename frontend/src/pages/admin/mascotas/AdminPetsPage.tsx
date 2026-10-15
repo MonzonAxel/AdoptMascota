@@ -138,6 +138,7 @@ export function AdminPetsPage() {
         }
       },
       'Dar de baja',
+      'error',
     )
   }
 

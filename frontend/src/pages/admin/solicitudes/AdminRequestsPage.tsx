@@ -55,6 +55,7 @@ export function AdminRequestsPage() {
         }
       },
       estado === 'aprobada' ? 'Aprobar solicitud' : 'Rechazar solicitud',
+      estado === 'aprobada' ? 'success' : 'error',
     )
   }
 

@@ -23,10 +23,6 @@ export function PrivateLayout() {
         <Brand />
         <div className="private-layout__section-label">Administracion</div>
         <nav className="private-layout__nav" aria-label="Navegacion administrativa">
-          <NavLink className="private-layout__link" to="/admin">
-            <LayoutDashboard size={17} aria-hidden="true" />
-            Resumen
-          </NavLink>
           {adminLinks.filter(({ to }) => to !== '/admin/usuarios' || usuario?.rol === 'admin').map(({ to, label, icon: Icon }) => (
             <NavLink
               className={({ isActive }) =>

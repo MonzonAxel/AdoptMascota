@@ -1,4 +1,4 @@
-import { Filter, RotateCcw, Search, SlidersHorizontal } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Filter, RotateCcw, Search, SlidersHorizontal } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useDeferredValue, useState } from 'react'
 
@@ -159,11 +159,28 @@ export function PetsPage() {
           </button>
         </div>
       ) : null}
-      <div className="pets-page__pagination">
-        <button type="button" disabled={pagina <= 1 || mascotasQuery.isFetching} onClick={() => setPagina((actual) => actual - 1)}>Anterior</button>
-        <span>Página {mascotasQuery.data?.page ?? pagina} de {mascotasQuery.data?.totalPages ?? 1}</span>
-        <button type="button" disabled={pagina >= (mascotasQuery.data?.totalPages ?? 1) || mascotasQuery.isFetching} onClick={() => setPagina((actual) => actual + 1)}>Siguiente</button>
-      </div>
+      <nav className="pets-page__pagination" aria-label="Paginación de mascotas">
+        <button
+          type="button"
+          disabled={pagina <= 1 || mascotasQuery.isFetching}
+          onClick={() => setPagina((actual) => actual - 1)}
+        >
+          <ChevronLeft size={17} aria-hidden="true" />
+          <span>Anterior</span>
+        </button>
+        <span className="pets-page__pagination-status" aria-live="polite" aria-atomic="true">
+          Página <strong>{mascotasQuery.data?.page ?? pagina}</strong> de{' '}
+          <strong>{mascotasQuery.data?.totalPages ?? 1}</strong>
+        </span>
+        <button
+          type="button"
+          disabled={pagina >= (mascotasQuery.data?.totalPages ?? 1) || mascotasQuery.isFetching}
+          onClick={() => setPagina((actual) => actual + 1)}
+        >
+          <span>Siguiente</span>
+          <ChevronRight size={17} aria-hidden="true" />
+        </button>
+      </nav>
     </div>
   )
 }

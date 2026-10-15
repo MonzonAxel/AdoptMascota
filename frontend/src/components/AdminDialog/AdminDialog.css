@@ -43,6 +43,30 @@
   background: var(--card);
 }
 
+.admin-dialog__header--feedback {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-areas:
+    ". icon close"
+    "heading heading heading";
+  row-gap: 0.75rem;
+}
+
+.admin-dialog__header--feedback .admin-dialog__icon {
+  grid-area: icon;
+  justify-self: center;
+}
+
+.admin-dialog__header--feedback .admin-dialog__heading {
+  grid-area: heading;
+  text-align: center;
+}
+
+.admin-dialog__header--feedback .admin-dialog__close {
+  grid-area: close;
+  justify-self: end;
+}
+
 .admin-dialog__title {
   margin: 0;
   color: var(--foreground);
@@ -76,14 +100,6 @@
   color: var(--foreground);
 }
 
-.admin-dialog__feedback {
-  display: grid;
-  justify-items: center;
-  gap: 0.75rem;
-  padding: 1.6rem 1.5rem 0.5rem;
-  text-align: center;
-}
-
 .admin-dialog__icon {
   display: grid;
   width: 3.5rem;
@@ -96,19 +112,40 @@
 
 .admin-dialog--success {
   --dialog-tone: #2f7d4a;
+  --dialog-action-tone: #2f7d4a;
+  --dialog-action-hover: #22633a;
 }
 
 .admin-dialog--error {
   --dialog-tone: #b42318;
+  --dialog-action-tone: #b42318;
+  --dialog-action-hover: #8f1c13;
 }
 
 .admin-dialog--warning,
 .admin-dialog--confirm {
   --dialog-tone: #a86408;
+  --dialog-action-tone: #a86408;
+  --dialog-action-hover: #7e4b06;
+}
+
+.admin-dialog--action-success {
+  --dialog-action-tone: #2f7d4a;
+  --dialog-action-hover: #22633a;
+}
+
+.admin-dialog--action-warning {
+  --dialog-action-tone: #a86408;
+  --dialog-action-hover: #7e4b06;
+}
+
+.admin-dialog--action-error {
+  --dialog-action-tone: #b42318;
+  --dialog-action-hover: #8f1c13;
 }
 
 .admin-dialog__inline-error {
-  margin: 0;
+  margin: 0.65rem 0 0;
   color: var(--destructive);
   font-size: 0.86rem;
 }
@@ -125,12 +162,14 @@
   padding: 1rem 1.5rem 1.25rem;
 }
 
-.admin-dialog__confirm-button {
-  background: #b42318;
+.admin-dialog__action-button {
+  background: var(--dialog-action-tone, var(--primary));
+  color: var(--primary-foreground);
 }
 
-.admin-dialog__confirm-button:hover:not(:disabled) {
-  background: #8f1c13;
+.admin-dialog__action-button:hover:not(:disabled) {
+  background: var(--dialog-action-hover, var(--dialog-action-tone, var(--primary)));
+  filter: none;
 }
 
 .admin-dialog__spinner {

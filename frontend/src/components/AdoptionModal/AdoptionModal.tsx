@@ -143,17 +143,10 @@ export function AdoptionModal({ animal, isOpen, onClose }: AdoptionModalProps) {
               ¡Solicitud enviada con éxito!
             </h2>
             <p className="adoption-modal__success-desc">
-              Gracias por tu compromiso con la adopción responsable. Recibimos tu postulación
-              para <strong>{animal.nombre}</strong>.
+              Recibimos tu postulación para <strong>{animal.nombre}</strong>.
             </p>
-            <div className="adoption-modal__success-ticket">
-              <Sparkles size={18} />
-              <span>
-                Comprobante N°: <strong>#{numeroSolicitud}</strong>
-              </span>
-            </div>
             <p className="adoption-modal__success-info">
-              El equipo del refugio revisará tus datos y se comunicará a la brevedad para coordinar
+              El equipo del refugio revisará tus datos y se comunicará a tu WhatsApp para coordinar
               los próximos pasos y el encuentro.
             </p>
             <Button size="lg" type="button" onClick={handleCerrar}>

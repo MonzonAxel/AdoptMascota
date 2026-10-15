@@ -88,6 +88,7 @@ export function AdminRequestDetailPage() {
         }
       },
       'Confirmar cambio',
+      estadoSeleccionado === 'aprobada' ? 'success' : estadoSeleccionado === 'rechazada' ? 'error' : 'warning',
     )
   }
 

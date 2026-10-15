@@ -7,12 +7,14 @@ import { Button } from '@/components/Button/Button'
 import './AdminDialog.css'
 
 export type AdminDialogVariant = 'form' | 'success' | 'error' | 'warning' | 'confirm'
+export type AdminDialogTone = 'success' | 'warning' | 'error'
 
 export interface AdminDialogConfig {
   variant: AdminDialogVariant
   title: string
   message?: string
   confirmLabel?: string
+  confirmTone?: AdminDialogTone
   cancelLabel?: string
   closeOnBackdrop?: boolean
   onConfirm?: () => void | Promise<void>
@@ -38,6 +40,7 @@ export function AdminDialog({
   title,
   message,
   confirmLabel,
+  confirmTone = 'warning',
   cancelLabel = 'Cancelar',
   closeOnBackdrop,
   onConfirm,
@@ -142,17 +145,24 @@ export function AdminDialog({
     <div className="admin-dialog-backdrop" onMouseDown={cerrarDesdeFondo}>
       <div
         ref={dialogRef}
-        className={`admin-dialog admin-dialog--${size} admin-dialog--${variant}`}
+        className={[
+          'admin-dialog',
+          `admin-dialog--${size}`,
+          `admin-dialog--${variant}`,
+          variant === 'confirm' ? `admin-dialog--action-${confirmTone}` : '',
+        ].filter(Boolean).join(' ')}
         role={variant === 'error' || isConfirmation ? 'alertdialog' : 'dialog'}
         aria-modal="true"
         aria-labelledby="admin-dialog-title"
         aria-describedby={message ? 'admin-dialog-message' : undefined}
         tabIndex={-1}
       >
-        <header className="admin-dialog__header">
-          <div>
+        <header className={`admin-dialog__header${isFeedback ? ' admin-dialog__header--feedback' : ''}`}>
+          {Icon ? <span className="admin-dialog__icon"><Icon size={28} aria-hidden="true" /></span> : null}
+          <div className="admin-dialog__heading">
             <h2 id="admin-dialog-title" className="admin-dialog__title">{title}</h2>
             {message ? <p id="admin-dialog-message" className="admin-dialog__message">{message}</p> : null}
+            {confirmationError ? <p className="admin-dialog__inline-error" role="alert">{confirmationError}</p> : null}
           </div>
           <button
             type="button"
@@ -166,13 +176,6 @@ export function AdminDialog({
           </button>
         </header>
 
-        {isFeedback ? (
-          <div className="admin-dialog__feedback">
-            {Icon ? <span className="admin-dialog__icon"><Icon size={28} aria-hidden="true" /></span> : null}
-            {confirmationError ? <p className="admin-dialog__inline-error" role="alert">{confirmationError}</p> : null}
-          </div>
-        ) : null}
-
         {children ? <div className="admin-dialog__content">{children}</div> : null}
 
         {isFeedback && !children ? (
@@ -184,7 +187,7 @@ export function AdminDialog({
                 </Button>
                 <Button
                   type="button"
-                  className={variant === 'confirm' ? 'admin-dialog__confirm-button' : ''}
+                  className="admin-dialog__action-button"
                   disabled={isConfirming}
                   onClick={confirmar}
                 >
@@ -193,7 +196,7 @@ export function AdminDialog({
                 </Button>
               </>
             ) : (
-              <Button type="button" data-dialog-autofocus onClick={onClose}>
+              <Button type="button" className="admin-dialog__action-button" data-dialog-autofocus onClick={onClose}>
                 {confirmLabel ?? 'Entendido'}
               </Button>
             )}

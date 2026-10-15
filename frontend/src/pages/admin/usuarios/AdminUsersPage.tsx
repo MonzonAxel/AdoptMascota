@@ -78,6 +78,7 @@ export function AdminUsersPage() {
         }
       },
       'Dar de baja',
+      'error',
     )
   }
 
