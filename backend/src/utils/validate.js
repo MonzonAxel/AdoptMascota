@@ -200,6 +200,7 @@ const validarFiltrosMascotas = (query = {}) => {
 // Solicitudes de adopción
 // ---------------------------------------------------------------------------
 const TELEFONO_RE = /^[0-9+()\-\s]{6,30}$/;
+const DNI_RE = /^[0-9]{7,8}$/;
 
 // Formulario público: TODO lo que importa se valida acá. Devuelve solo los campos permitidos
 // (el estado, quién la revisó, etc. nunca se aceptan desde afuera).
@@ -227,6 +228,10 @@ const validarSolicitud = (body = {}) => {
   if (!esTexto(body.email) || !EMAIL_RE.test(body.email.trim()) || body.email.trim().length > 150) {
     error('email', 'Ingresá un email válido');
   } else limpio.email = body.email.trim().toLowerCase();
+
+  const dni = typeof body.dni === 'string' ? body.dni.trim() : '';
+  if (!DNI_RE.test(dni)) error('dni', 'Ingresá un DNI válido de 7 u 8 dígitos');
+  else limpio.dni = dni;
 
   const edad = aEntero(body.edad);
   if (Number.isNaN(edad) || edad > EDAD_MAXIMA_ADOPTANTE || edad < 0) error('edad', 'Ingresá una edad válida');

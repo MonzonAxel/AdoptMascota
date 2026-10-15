@@ -7,8 +7,8 @@ module.exports = {
   // Una solicitud "activa" es la que todavía no se resolvió.
   ESTADOS_SOLICITUD_ACTIVA: ['pendiente', 'en_revision'],
 
-  // Tope de trámites simultáneos por email (evita que una persona "reserve" todas las mascotas).
-  MAX_SOLICITUDES_ACTIVAS_POR_EMAIL: 3,
+  // Tope de trámites simultáneos por DNI.
+  MAX_SOLICITUDES_ACTIVAS_POR_DNI: 5,
 
   // De qué estado se puede pasar a cuál. "aprobada" y "rechazada" son finales.
   TRANSICIONES_SOLICITUD: {

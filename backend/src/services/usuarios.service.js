@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const { Usuario, PerfilUsuario, sequelize } = require('../models');
 const AppError = require('../utils/AppError');
 const { formatearUsuario } = require('../utils/serializers');
@@ -21,8 +22,15 @@ const verificarEmailLibre = async (email, idPropio = null) => {
   }
 };
 
-const listar = async () => {
-  const usuarios = await Usuario.findAll({ include: CON_PERFIL, order: [['createdAt', 'DESC']] });
+const listar = async (estado = 'activos') => {
+  const opciones = estado === 'inactivos'
+    ? { paranoid: false, where: { deletedAt: { [Op.ne]: null } } }
+    : {};
+  const usuarios = await Usuario.findAll({
+    ...opciones,
+    include: CON_PERFIL,
+    order: [['createdAt', 'DESC']],
+  });
   return usuarios.map(formatearUsuario);
 };
 
@@ -101,4 +109,24 @@ const eliminar = async (id, usuarioActual) => {
   });
 };
 
-module.exports = { listar, obtenerFormateado, crear, actualizar, eliminar };
+const reactivar = async (id, usuarioActual) => {
+  const usuario = await Usuario.findByPk(id, { paranoid: false, include: CON_PERFIL });
+  if (!usuario) throw new AppError('Usuario no encontrado', 404);
+  if (!usuario.deletedAt) throw new AppError('El usuario ya está activo', 409);
+
+  const fechaBaja = usuario.deletedAt;
+  await sequelize.transaction(async (t) => {
+    await usuario.restore({ transaction: t });
+    await auditoria.registrar({
+      tabla: 'usuarios',
+      registroId: id,
+      usuarioId: usuarioActual.id,
+      accion: 'actualizar',
+      cambios: [{ campo: 'deletedAt', antiguo: fechaBaja, actual: null }],
+    }, { transaction: t });
+  });
+
+  return obtenerFormateado(id);
+};
+
+module.exports = { listar, obtenerFormateado, crear, actualizar, eliminar, reactivar };

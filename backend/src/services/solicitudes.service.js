@@ -7,7 +7,7 @@ const {
   formatearMascotaCorta, formatearObservacion, formatearSolicitudResumen, formatearSolicitudDetalle,
 } = require('../utils/serializers');
 const {
-  ESTADOS_SOLICITUD_ACTIVA, MAX_SOLICITUDES_ACTIVAS_POR_EMAIL, TRANSICIONES_SOLICITUD,
+  ESTADOS_SOLICITUD_ACTIVA, MAX_SOLICITUDES_ACTIVAS_POR_DNI, TRANSICIONES_SOLICITUD,
 } = require('../constants/negocio');
 const auditoria = require('./auditoria.service');
 const { fotosDe } = require('./mascotas.service');
@@ -20,30 +20,25 @@ const activas = { [Op.in]: ESTADOS_SOLICITUD_ACTIVA };
 // ---------------------------------------------------------------------------
 const crear = async (datos) =>
   sequelize.transaction(async (t) => {
-    // Se "bloquea" la fila de la mascota hasta terminar: si dos personas envían a la vez,
-    // la segunda espera, ve que ya está en trámite y recibe el aviso (en vez de crear un duplicado).
+    // Se bloquea la mascota para serializar envíos mientras el personal cambia su disponibilidad.
     const animal = await Animal.findByPk(datos.animal_id, { transaction: t, lock: t.LOCK.UPDATE });
     if (!animal) throw new AppError('Mascota no encontrada', 404);
 
-    const yaTieneTramite = await SolicitudAdopcion.count({
-      where: { animal_id: animal.id, estado: activas }, transaction: t,
-    });
-    if (animal.estado !== 'disponible' || yaTieneTramite > 0) {
-      throw new AppError('Esta mascota ya no está disponible: otra persona inició el trámite de adopción', 409);
+    if (animal.estado !== 'disponible') {
+      throw new AppError('Esta mascota ya no está disponible para recibir solicitudes', 409);
     }
 
-    const tramitesDelEmail = await SolicitudAdopcion.count({
-      where: { email: datos.email, estado: activas }, transaction: t,
+    const solicitudesActivasDelDni = await SolicitudAdopcion.count({
+      where: { dni: datos.dni, estado: activas }, transaction: t,
     });
-    if (tramitesDelEmail >= MAX_SOLICITUDES_ACTIVAS_POR_EMAIL) {
+    if (solicitudesActivasDelDni >= MAX_SOLICITUDES_ACTIVAS_POR_DNI) {
       throw new AppError(
-        `Ya tenés ${tramitesDelEmail} solicitudes en trámite. Esperá a que el refugio las resuelva antes de iniciar otra`,
+        `Este DNI ya alcanzó el máximo de ${MAX_SOLICITUDES_ACTIVAS_POR_DNI} solicitudes activas. El refugio debe resolver alguna antes de que puedas enviar otra.`,
         409,
       );
     }
 
     const solicitud = await SolicitudAdopcion.create({ ...datos, estado: 'pendiente' }, { transaction: t });
-    await animal.update({ estado: 'en_proceso' }, { transaction: t }); // sale de la galería pública
 
     // A quien consulta solo se le confirma lo mínimo: no se le devuelven sus propios datos.
     return { id: solicitud.id, estado: solicitud.estado, mascota: { id: animal.id, nombre: animal.nombre } };
@@ -109,7 +104,7 @@ const obtener = async (id, { baseUrl }) => {
 // ---------------------------------------------------------------------------
 // Cambio de estado (personal)
 // ---------------------------------------------------------------------------
-// Efecto sobre la mascota:  aprobada -> adoptado | rechazada -> vuelve a disponible
+// Aprobar marca la mascota como adoptada. El personal controla manualmente la disponibilidad.
 const cambiarEstado = async (id, { estado, observacion }, usuario, ctx) => {
   await sequelize.transaction(async (t) => {
     // Se bloquea la solicitud: si dos personas del refugio la resuelven a la vez, una sola gana.
@@ -144,8 +139,6 @@ const cambiarEstado = async (id, { estado, observacion }, usuario, ctx) => {
     if (animal) {
       let nuevo = null;
       if (estado === 'aprobada') nuevo = 'adoptado';
-      // Al rechazar vuelve a estar disponible, salvo que el personal ya la haya movido a mano a otro estado.
-      else if (estado === 'rechazada' && animal.estado === 'en_proceso') nuevo = 'disponible';
 
       if (nuevo && nuevo !== animal.estado) {
         const previo = animal.estado;

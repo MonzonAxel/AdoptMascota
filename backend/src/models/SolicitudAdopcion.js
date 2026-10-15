@@ -5,6 +5,7 @@ module.exports = (sequelize, DataTypes) => {
     animal_id: req(DataTypes.INTEGER),
     nombre_apellido: req(DataTypes.STRING(100)),
     email: { type: DataTypes.STRING(150), allowNull: false, validate: { isEmail: true } },
+    dni: { type: DataTypes.STRING(8), allowNull: true },
     edad: req(DataTypes.INTEGER),
     telefono_celular: req(DataTypes.STRING(30)),
     telefono_fijo: DataTypes.STRING(30),

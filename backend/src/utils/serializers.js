@@ -7,6 +7,7 @@ const formatearUsuario = (u) => ({
   nombre: u.perfil ? u.perfil.nombre : null,
   apellido: u.perfil ? u.perfil.apellido : null,
   creado: u.createdAt,
+  eliminado: u.deletedAt || null,
 });
 
 // ---- Mascotas ----
@@ -113,6 +114,7 @@ const formatearSolicitudDetalle = (s, { mascota, observaciones, historial }) => 
   fecha_resolucion: s.fecha_resolucion,
   revisado_por: formatearPersona(s.revisor),
   nombre_apellido: s.nombre_apellido,
+  dni: s.dni,
   edad: s.edad,
   email: s.email,
   telefono_celular: s.telefono_celular,

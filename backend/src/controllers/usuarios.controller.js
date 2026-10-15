@@ -13,8 +13,13 @@ const leerId = (req) => {
 
 const me = (req, res) => success(res, formatearUsuario(req.usuario));
 
-const listar = asyncHandler(async (req, res) =>
-  success(res, await usuariosService.listar()));
+const listar = asyncHandler(async (req, res) => {
+  const estado = req.query.estado ?? 'activos';
+  if (!['activos', 'inactivos'].includes(estado)) {
+    throw new AppError('El filtro estado debe ser "activos" o "inactivos"', 400);
+  }
+  return success(res, await usuariosService.listar(estado));
+});
 
 const obtener = asyncHandler(async (req, res) =>
   success(res, await usuariosService.obtenerFormateado(leerId(req))));
@@ -36,4 +41,7 @@ const eliminar = asyncHandler(async (req, res) => {
   return success(res, null, 'Usuario dado de baja');
 });
 
-module.exports = { me, listar, obtener, crear, actualizar, eliminar };
+const reactivar = asyncHandler(async (req, res) =>
+  success(res, await usuariosService.reactivar(leerId(req), req.usuario), 'Usuario reactivado'));
+
+module.exports = { me, listar, obtener, crear, actualizar, eliminar, reactivar };

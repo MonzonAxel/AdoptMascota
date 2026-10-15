@@ -105,8 +105,9 @@ const crear = async (datos, archivos, usuario, ctx) => {
 };
 
 const actualizar = async (id, datos, usuario, ctx) => {
-  const animal = await asegurarExiste(id);
   await sequelize.transaction(async (t) => {
+    const animal = await Animal.findByPk(id, { transaction: t, lock: t.LOCK.UPDATE });
+    if (!animal) throw new AppError('Mascota no encontrada', 404);
     animal.set(datos);
     const cambios = auditoria.diferencias(animal); // qué campos cambiaron realmente
     animal.set('actualizado_por', usuario.id);

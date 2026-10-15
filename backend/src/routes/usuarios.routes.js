@@ -12,6 +12,7 @@ router.get('/me', usuariosController.me); // cualquier rol
 // (/me va ANTES de /:id, si no Express creería que "me" es un id)
 router.use(autorizarRoles('admin'));
 router.get('/', usuariosController.listar);
+router.patch('/:id/reactivar', usuariosController.reactivar);
 router.get('/:id', usuariosController.obtener);
 router.post('/', usuariosController.crear);
 router.put('/:id', usuariosController.actualizar);

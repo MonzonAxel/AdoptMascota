@@ -19,8 +19,9 @@ tags:
       Solicitudes de adopción. **Enviar** el formulario (`POST /solicitudes`) es público; **todo lo demás** es solo para
       el personal (admin o administrativo), porque las solicitudes contienen datos personales.
 
-      Al enviarse una solicitud la mascota pasa a `en_proceso` (sale de la galería pública). Al **aprobarla** pasa a
-      `adoptado`; al **rechazarla** vuelve a `disponible`. Una solicitud aprobada o rechazada ya no se puede modificar.
+      Una mascota disponible puede recibir varias solicitudes. El personal controla cuándo pasa a `en_proceso`; desde
+      ese estado no se aceptan nuevas. Al **aprobar** una solicitud la mascota pasa a `adoptado`; rechazar no cambia
+      automáticamente el estado de la mascota. Una solicitud aprobada o rechazada ya no se puede modificar.
   - name: Mascotas
     description: |
       Galería pública y gestión de mascotas. **Ver** (GET) es público: el público solo ve las mascotas
@@ -57,6 +58,7 @@ components:
         nombre: { type: string, example: Admin }
         apellido: { type: string, example: AdoptMascota }
         creado: { type: string, format: date-time }
+        eliminado: { type: string, format: date-time, nullable: true, description: Fecha de baja lógica; null si está activo. }
     LoginRequest:
       type: object
       required: [email, password]
@@ -208,11 +210,12 @@ components:
           items: { type: string, format: binary }
     SolicitudCrear:
       type: object
-      required: [animal_id, nombre_apellido, email, edad, telefono_celular, ocupacion, localidad_barrio, direccion, vivienda, tipo_tenencia, detalle_vivienda, personas_hogar, hay_ninos_hogar, otros_animales_hogar, frecuencia_paseo, cuidador_vacaciones]
+      required: [animal_id, nombre_apellido, email, dni, edad, telefono_celular, ocupacion, localidad_barrio, direccion, vivienda, tipo_tenencia, detalle_vivienda, personas_hogar, hay_ninos_hogar, otros_animales_hogar, frecuencia_paseo, cuidador_vacaciones]
       properties:
         animal_id: { type: integer, description: Id de la mascota que se quiere adoptar, example: 1 }
         nombre_apellido: { type: string, maxLength: 100, example: Ana Pérez }
         email: { type: string, maxLength: 150, example: ana@mail.com }
+        dni: { type: string, minLength: 7, maxLength: 8, pattern: '^[0-9]{7,8}$', example: '30123456' }
         edad: { type: integer, minimum: 18, maximum: 110, description: Hay que ser mayor de 18 años, example: 34 }
         telefono_celular: { type: string, description: 'Solo números, espacios, + - y paréntesis', example: '+54 221 555-1234' }
         telefono_fijo: { type: string, nullable: true, description: Opcional, example: '0221 423-5555' }
@@ -313,6 +316,7 @@ components:
         fecha_resolucion: { type: string, format: date-time, nullable: true }
         revisado_por: { $ref: '#/components/schemas/Persona' }
         nombre_apellido: { type: string }
+        dni: { type: string, nullable: true, description: Puede ser null en solicitudes anteriores a la migración. }
         edad: { type: integer }
         email: { type: string }
         telefono_celular: { type: string }
@@ -442,6 +446,8 @@ paths:
       summary: Listar usuarios (solo admin)
       tags: [Usuarios]
       security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: estado, in: query, description: Por defecto lista usuarios activos., schema: { type: string, enum: [activos, inactivos], default: activos } }
       responses:
         '200': { description: Lista de usuarios }
         '401': { $ref: '#/components/responses/NoAutenticado' }
@@ -496,6 +502,20 @@ paths:
         '401': { $ref: '#/components/responses/NoAutenticado' }
         '403': { $ref: '#/components/responses/SinPermiso' }
         '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /usuarios/{id}/reactivar:
+    patch:
+      summary: Reactivar un usuario dado de baja (solo admin)
+      description: Restaura la cuenta y registra la acción en el historial de auditoría.
+      tags: [Usuarios]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdUsuario' }]
+      responses:
+        '200': { description: Usuario reactivado }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { description: El usuario ya está activo }
 
   /mascotas:
     get:
@@ -655,15 +675,15 @@ paths:
       description: |
         Formulario público. Reglas:
         - Hay que ser **mayor de 18 años**.
-        - La mascota tiene que estar `disponible`. Si otra persona ya inició el trámite responde **409**.
-        - Una misma persona (email) puede tener hasta **3 solicitudes en trámite** a la vez.
+        - El DNI debe tener entre 7 y 8 dígitos. Puede haber hasta **5 solicitudes activas por DNI**; al llegar al límite hay que esperar a que el refugio resuelva alguna.
+        - Una mascota `disponible` puede recibir solicitudes de distintas personas. El personal decide cuándo pasa a `en_proceso`; desde entonces no se aceptan nuevas solicitudes (**409**).
         - Si la persona es **inquilina**, hay que indicar `permite_animales`.
         - Hay un **límite de envíos por IP** (responde **429**).
 
         El estado, el revisor y las fechas los define el sistema: si se envían, se ignoran.
 
-        **Para probarlo en Swagger:** el ejemplo usa `animal_id` 1. Después de un envío exitoso esa mascota queda
-        en trámite; para otra prueba usá otra mascota (2, 3 o 4), o rechazá la solicitud para liberarla.
+        **Para probarlo en Swagger:** el ejemplo usa `animal_id` 1. Después de un envío exitoso la mascota sigue
+        disponible para recibir otras solicitudes hasta que el personal cambie su estado desde la gestión de mascotas.
       tags: [Solicitudes]
       requestBody:
         required: true
@@ -673,7 +693,7 @@ paths:
           description: Solicitud recibida
           content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaSolicitudCreada' } } }
         '404': { $ref: '#/components/responses/NoEncontrado' }
-        '409': { description: 'La mascota ya tiene un trámite en curso o no está disponible, o la persona alcanzó el tope de 3 solicitudes en trámite' }
+        '409': { description: 'La mascota no está disponible o el DNI alcanzó el tope de 5 solicitudes activas' }
         '422': { $ref: '#/components/responses/DatosInvalidos' }
         '429': { description: Demasiados envíos seguidos desde la misma IP }
     get:
@@ -716,7 +736,7 @@ paths:
         Pasos permitidos: `pendiente` y `en_revision` pueden ir a cualquiera de los otros estados.
         `aprobada` y `rechazada` son **finales** (responde 409 si se intenta modificarlas).
 
-        Efectos: al **aprobar**, la mascota pasa a `adoptado`. Al **rechazar**, vuelve a `disponible`.
+        Efectos: al **aprobar**, la mascota pasa a `adoptado`. Al **rechazar**, el estado de la mascota no cambia y queda bajo control del personal.
         El cambio queda registrado en el historial con quién lo hizo. Se puede adjuntar una nota en `observacion`.
       tags: [Solicitudes]
       security: [{ bearerAuth: [] }]
