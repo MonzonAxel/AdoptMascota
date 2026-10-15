@@ -36,6 +36,5 @@ export interface DatosActualizarUsuario {
 }
 
 export interface FiltrosUsuarios {
-  rol?: RolUsuario
-  incluirEliminados?: boolean
+  estado?: 'activos' | 'inactivos'
 }

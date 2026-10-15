@@ -177,6 +177,7 @@ export function AdminRequestDetailPage() {
 
       <div className="solicitud-detail__grid">
         <CampoSolicitud titulo="Nombre y apellido" valor={solicitud.nombre_apellido} />
+        <CampoSolicitud titulo="DNI" valor={solicitud.dni ?? 'No informado'} />
         <CampoSolicitud titulo="Edad" valor={`${solicitud.edad} años`} />
         <CampoSolicitud titulo="Email" valor={solicitud.email} />
         <CampoSolicitud titulo="Teléfono celular" valor={solicitud.telefono_celular} />

@@ -180,7 +180,7 @@ export function PetDetailPage() {
               className="pet-detail-page__cta-button"
               size="lg"
               type="button"
-              disabled={animal.estado === 'adoptado'}
+              disabled={animal.estado !== 'disponible'}
               onClick={() => setModalAbierto(true)}
             >
               <Heart size={20} fill="currentColor" aria-hidden="true" />
@@ -188,7 +188,7 @@ export function PetDetailPage() {
                 {animal.estado === 'disponible'
                   ? 'Solicitar Adopción'
                   : animal.estado === 'en_proceso'
-                    ? 'Postularme en lista de espera'
+                    ? 'Adopción en proceso'
                     : 'Mascota ya adoptada'}
               </span>
             </Button>

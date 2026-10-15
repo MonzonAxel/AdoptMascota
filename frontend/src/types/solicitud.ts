@@ -45,6 +45,7 @@ export interface ResumenSolicitudAdopcion {
 }
 
 export interface SolicitudAdopcion extends ResumenSolicitudAdopcion {
+  dni: string | null
   edad: number
   telefono_fijo: string | null
   ocupacion: string
@@ -68,6 +69,7 @@ export interface DatosCrearSolicitud {
   animal_id: number
   nombre_apellido: string
   email: string
+  dni: string
   edad: number
   telefono_celular: string
   telefono_fijo?: string | null

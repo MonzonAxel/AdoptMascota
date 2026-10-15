@@ -130,6 +130,12 @@
   font-weight: 500;
 }
 
+.adoption-modal__hint {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
 .adoption-modal__actions {
   display: flex;
   align-items: center;
@@ -149,8 +155,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
   padding: 1.5rem 0.5rem;
+  text-align: center;
 }
 
 .adoption-modal__success-icon {
@@ -158,10 +164,10 @@
   width: 5.5rem;
   height: 5.5rem;
   place-items: center;
+  margin-bottom: 1.2rem;
   border-radius: 50%;
   background: var(--secondary);
   color: var(--status-success);
-  margin-bottom: 1.2rem;
 }
 
 .adoption-modal__success-title {
@@ -183,13 +189,13 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 1.2rem;
   padding: 0.5rem 1.1rem;
   border-radius: 0.5rem;
   background: var(--secondary);
   color: var(--primary);
   font-family: var(--font-code);
   font-size: 0.88rem;
-  margin-bottom: 1.2rem;
 }
 
 .adoption-modal__success-info {

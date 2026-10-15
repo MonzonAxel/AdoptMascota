@@ -1,4 +1,4 @@
-import { Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
@@ -19,8 +19,12 @@ export function AdminUsersPage() {
   const { usuario: usuarioActual } = useAuth()
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [usuarioEnEdicion, setUsuarioEnEdicion] = useState<Usuario | null>(null)
+  const [estadoFiltro, setEstadoFiltro] = useState<'activos' | 'inactivos'>('activos')
   const [mensajeError, setMensajeError] = useState('')
-  const usuariosQuery = useQuery({ queryKey: ['usuarios'], queryFn: () => usuariosService.listar() })
+  const usuariosQuery = useQuery({
+    queryKey: ['usuarios', estadoFiltro],
+    queryFn: () => usuariosService.listar({ estado: estadoFiltro }),
+  })
   const crearMutation = useMutation({
     mutationFn: (datos: DatosCrearUsuario) => usuariosService.crear(datos),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['usuarios'] }),
@@ -34,8 +38,12 @@ export function AdminUsersPage() {
     mutationFn: (id: number) => usuariosService.darDeBaja(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['usuarios'] }),
   })
+  const reactivarMutation = useMutation({
+    mutationFn: (id: number) => usuariosService.reactivar(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['usuarios'] }),
+  })
   const usuarios = usuariosQuery.data ?? []
-  const mutando = crearMutation.isPending || actualizarMutation.isPending
+  const mutando = crearMutation.isPending || actualizarMutation.isPending || reactivarMutation.isPending
 
   async function guardarUsuario(datos: DatosCrearUsuario | DatosActualizarUsuario) {
     setMensajeError('')
@@ -82,6 +90,24 @@ export function AdminUsersPage() {
     )
   }
 
+  function confirmarReactivacion(usuario: Usuario) {
+    const nombre = `${usuario.perfil.nombre} ${usuario.perfil.apellido}`
+    feedback.showConfirmation(
+      'Reactivar usuario',
+      `¿Querés reactivar a ${nombre}? Volverá a poder iniciar sesión.`,
+      async () => {
+        try {
+          await reactivarMutation.mutateAsync(usuario.id)
+          feedback.showSuccess('Usuario reactivado', `${nombre} ya puede iniciar sesión nuevamente.`)
+        } catch (error) {
+          feedback.showError('No se pudo reactivar el usuario', error, 'Volvé a intentarlo en unos minutos.')
+        }
+      },
+      'Reactivar usuario',
+      'success',
+    )
+  }
+
   return (
     <div className="admin-page admin-users-page">
       <div className="admin-page__heading-row">
@@ -123,6 +149,24 @@ export function AdminUsersPage() {
       ) : null}
       {usuariosQuery.isError ? <p role="alert">{usuariosQuery.error.message}</p> : null}
       {eliminarMutation.isError ? <p role="alert">{eliminarMutation.error.message}</p> : null}
+      <div className="admin-users-page__status-filter" role="group" aria-label="Filtrar usuarios por estado">
+        <Button
+          type="button"
+          variant={estadoFiltro === 'activos' ? 'default' : 'outline'}
+          aria-pressed={estadoFiltro === 'activos'}
+          onClick={() => setEstadoFiltro('activos')}
+        >
+          Activos
+        </Button>
+        <Button
+          type="button"
+          variant={estadoFiltro === 'inactivos' ? 'default' : 'outline'}
+          aria-pressed={estadoFiltro === 'inactivos'}
+          onClick={() => setEstadoFiltro('inactivos')}
+        >
+          Dados de baja
+        </Button>
+      </div>
       <section className="admin-table-wrap" aria-label="Usuarios administrativos">
         <table className="admin-table">
           <thead>
@@ -137,7 +181,7 @@ export function AdminUsersPage() {
             {usuariosQuery.isLoading ? (
               <tr><td colSpan={4}>Cargando usuarios...</td></tr>
             ) : usuarios.length === 0 ? (
-              <tr><td colSpan={4}>No hay usuarios registrados.</td></tr>
+              <tr><td colSpan={4}>{estadoFiltro === 'activos' ? 'No hay usuarios activos.' : 'No hay usuarios dados de baja.'}</td></tr>
             ) : usuarios.map((usuario) => (
               <tr key={usuario.id}>
                 <td>
@@ -145,32 +189,51 @@ export function AdminUsersPage() {
                   <span>{usuario.correoElectronico}</span>
                 </td>
                 <td>{usuario.rol === 'admin' ? 'Administrador' : 'Administrativo'}</td>
-                <td><span>Activo</span></td>
                 <td>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Editar ${usuario.perfil.nombre} ${usuario.perfil.apellido}`}
-                    disabled={mutando}
-                    onClick={() => {
-                      setMensajeError('')
-                      setUsuarioEnEdicion(usuario)
-                      setMostrarFormulario(true)
-                    }}
-                  >
-                    <Pencil size={16} aria-hidden="true" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Dar de baja a ${usuario.perfil.nombre} ${usuario.perfil.apellido}`}
-                    disabled={usuario.id === usuarioActual?.id || eliminarMutation.isPending}
-                    onClick={() => confirmarBaja(usuario)}
-                  >
-                    <Trash2 size={16} aria-hidden="true" />
-                  </Button>
+                  <span className={`admin-users-page__status${usuario.eliminadoEn ? ' admin-users-page__status--inactive' : ''}`}>
+                    {usuario.eliminadoEn ? 'Dado de baja' : 'Activo'}
+                  </span>
+                </td>
+                <td>
+                  {usuario.eliminadoEn ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Reactivar a ${usuario.perfil.nombre} ${usuario.perfil.apellido}`}
+                      disabled={reactivarMutation.isPending}
+                      onClick={() => confirmarReactivacion(usuario)}
+                    >
+                      <RotateCcw size={16} aria-hidden="true" />
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Editar ${usuario.perfil.nombre} ${usuario.perfil.apellido}`}
+                        disabled={mutando}
+                        onClick={() => {
+                          setMensajeError('')
+                          setUsuarioEnEdicion(usuario)
+                          setMostrarFormulario(true)
+                        }}
+                      >
+                        <Pencil size={16} aria-hidden="true" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Dar de baja a ${usuario.perfil.nombre} ${usuario.perfil.apellido}`}
+                        disabled={usuario.id === usuarioActual?.id || eliminarMutation.isPending}
+                        onClick={() => confirmarBaja(usuario)}
+                      >
+                        <Trash2 size={16} aria-hidden="true" />
+                      </Button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

@@ -1,6 +1,7 @@
-import { CheckCircle2, Heart, Loader2, Sparkles, X } from 'lucide-react'
+import { CheckCircle2, Heart, Loader2, X } from 'lucide-react'
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 
@@ -14,6 +15,7 @@ import './AdoptionModal.css'
 const esquemaSolicitud = z.object({
   nombreApellido: z.string().trim().min(3, 'Ingresá tu nombre y apellido completo.').max(100),
   correoElectronico: z.string().trim().email('Ingresá un correo electrónico válido.').max(150).toLowerCase(),
+  dni: z.string().trim().regex(/^\d{7,8}$/, 'Ingresá un DNI válido de 7 u 8 dígitos.'),
   telefonoCelular: z
     .string().trim().min(6, 'Ingresá un número de teléfono válido.').max(30)
     .regex(/^[0-9+\s\-()]+$/, 'El teléfono contiene caracteres inválidos.'),
@@ -49,6 +51,7 @@ type AdoptionModalProps = {
 }
 
 export function AdoptionModal({ animal, isOpen, onClose }: AdoptionModalProps) {
+  const navigate = useNavigate()
   const [enviadoExitosamente, setEnviadoExitosamente] = useState(false)
   const [numeroSolicitud, setNumeroSolicitud] = useState<number | null>(null)
   const [mensajeError, setMensajeError] = useState('')
@@ -64,6 +67,7 @@ export function AdoptionModal({ animal, isOpen, onClose }: AdoptionModalProps) {
     defaultValues: {
       nombreApellido: '',
       correoElectronico: '',
+      dni: '',
       telefonoCelular: '',
       telefonoFijo: '',
       edad: '25',
@@ -86,10 +90,15 @@ export function AdoptionModal({ animal, isOpen, onClose }: AdoptionModalProps) {
   if (!isOpen) return null
 
   function handleCerrar() {
+    const redirigirAlListado = enviadoExitosamente
     reset()
     setEnviadoExitosamente(false)
+    setNumeroSolicitud(null)
     setMensajeError('')
     onClose()
+    if (redirigirAlListado) {
+      navigate('/mascotas', { replace: true, state: { solicitudEnviada: true } })
+    }
   }
 
   async function onSubmit(data: SolicitudValidada) {
@@ -99,6 +108,7 @@ export function AdoptionModal({ animal, isOpen, onClose }: AdoptionModalProps) {
         animal_id: animal.id,
         nombre_apellido: data.nombreApellido,
         email: data.correoElectronico,
+        dni: data.dni,
         edad: data.edad,
         telefono_celular: data.telefonoCelular,
         telefono_fijo: data.telefonoFijo,
@@ -203,6 +213,21 @@ export function AdoptionModal({ animal, isOpen, onClose }: AdoptionModalProps) {
                     </span>
                   )}
                 </div>
+              </div>
+
+              <div className="adoption-modal__field">
+                <label htmlFor="dni">DNI *</label>
+                <input
+                  id="dni"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={8}
+                  placeholder="Ej. 12345678"
+                  {...register('dni')}
+                  aria-invalid={Boolean(errors.dni)}
+                />
+                {errors.dni ? <span className="adoption-modal__error">{errors.dni.message}</span> : null}
               </div>
 
               <div className="adoption-modal__row">

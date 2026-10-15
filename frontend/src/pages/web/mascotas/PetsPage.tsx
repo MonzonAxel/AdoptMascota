@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight, Filter, RotateCcw, Search, SlidersHorizontal } from 'lucide-react'
+import { CheckCircle2, ChevronLeft, ChevronRight, Filter, RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { useDeferredValue, useState } from 'react'
+import { useDeferredValue, useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { PageHeader } from '@/components/PageHeader/PageHeader'
 import { PetCard } from '@/components/PetCard/PetCard'
@@ -11,6 +12,11 @@ import { formatearColor, formatearEspecie } from '@/utils/formateadoresAnimal'
 import './PetsPage.css'
 
 export function PetsPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [mostrarAvisoSolicitud, setMostrarAvisoSolicitud] = useState(() =>
+    Boolean((location.state as { solicitudEnviada?: boolean } | null)?.solicitudEnviada),
+  )
   const [busqueda, setBusqueda] = useState('')
   const [especieSeleccionada, setEspecieSeleccionada] = useState<TipoEspecieAnimal | 'todos'>('todos')
   const [tamanoSeleccionado, setTamanoSeleccionado] = useState<TipoTamanoAnimal | 'todos'>('todos')
@@ -18,6 +24,13 @@ export function PetsPage() {
   const [colorSeleccionado, setColorSeleccionado] = useState<ColorAnimal | 'todos'>('todos')
   const [pagina, setPagina] = useState(1)
   const busquedaDiferida = useDeferredValue(busqueda.trim().toLowerCase())
+
+  useEffect(() => {
+    if (mostrarAvisoSolicitud && location.state) {
+      navigate(location.pathname, { replace: true, state: null })
+    }
+  }, [location.pathname, location.state, mostrarAvisoSolicitud, navigate])
+
   const opcionesQuery = useQuery({
     queryKey: ['mascotas-filtros'],
     queryFn: () => animalesService.obtenerOpcionesFiltros(),

@@ -2,6 +2,7 @@ import { clienteApi } from '@/services/api'
 import type {
   DatosActualizarUsuario,
   DatosCrearUsuario,
+  FiltrosUsuarios,
   Usuario,
 } from '@/types/usuario'
 
@@ -12,6 +13,7 @@ interface UsuarioApi {
   nombre: string | null
   apellido: string | null
   creado: string
+  eliminado: string | null
 }
 
 const mapearUsuario = (origen: UsuarioApi): Usuario => ({
@@ -28,7 +30,7 @@ const mapearUsuario = (origen: UsuarioApi): Usuario => ({
   },
   creadoEn: origen.creado,
   actualizadoEn: null,
-  eliminadoEn: null,
+  eliminadoEn: origen.eliminado,
 })
 
 const aDatosApi = (datos: DatosCrearUsuario | DatosActualizarUsuario) => ({
@@ -40,8 +42,8 @@ const aDatosApi = (datos: DatosCrearUsuario | DatosActualizarUsuario) => ({
 })
 
 export const usuariosService = {
-  async listar() {
-    const { data } = await clienteApi.get<UsuarioApi[]>('/usuarios')
+  async listar(filtros: FiltrosUsuarios = {}) {
+    const { data } = await clienteApi.get<UsuarioApi[]>('/usuarios', { params: filtros })
     return data.map(mapearUsuario)
   },
 
@@ -62,5 +64,10 @@ export const usuariosService = {
 
   async darDeBaja(id: number) {
     await clienteApi.delete(`/usuarios/${id}`)
+  },
+
+  async reactivar(id: number) {
+    const { data } = await clienteApi.patch<UsuarioApi>(`/usuarios/${id}/reactivar`)
+    return mapearUsuario(data)
   },
 }
