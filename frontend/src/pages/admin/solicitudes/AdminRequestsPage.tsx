@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, ChevronRight, Eye, X } from 'lucide-react'
+import { Check, Eye, X } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -7,6 +7,7 @@ import { AdminDialog } from '@/components/AdminDialog/AdminDialog'
 import { PageHeader } from '@/components/PageHeader/PageHeader'
 import { StatusBadge } from '@/components/StatusBadge/StatusBadge'
 import { Button } from '@/components/Button/Button'
+import { AdminPagination } from '@/pages/admin/components/AdminPagination'
 import { useAdminDialog } from '@/hooks/useAdminDialog'
 import type { EstadoSolicitud } from '@/types/solicitud'
 import { formatearFecha } from '@/utils/formatearFecha'
@@ -157,29 +158,12 @@ export function AdminRequestsPage() {
           </tbody>
         </table>
       </section>
-      <div className="admin-requests-page__pagination">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label="Página anterior"
-          disabled={pagina <= 1 || solicitudesQuery.isFetching}
-          onClick={() => setPagina((actual) => actual - 1)}
-        >
-          <ChevronLeft size={16} aria-hidden="true" />
-        </Button>
-        <span>Página {solicitudesQuery.data?.page ?? pagina} de {solicitudesQuery.data?.totalPages ?? 1}</span>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label="Página siguiente"
-          disabled={pagina >= (solicitudesQuery.data?.totalPages ?? 1) || solicitudesQuery.isFetching}
-          onClick={() => setPagina((actual) => actual + 1)}
-        >
-          <ChevronRight size={16} aria-hidden="true" />
-        </Button>
-      </div>
+      <AdminPagination
+        pagina={solicitudesQuery.data?.page ?? pagina}
+        totalPaginas={solicitudesQuery.data?.totalPages ?? 1}
+        cargando={solicitudesQuery.isFetching}
+        onCambiarPagina={setPagina}
+      />
       {feedback.dialog ? (
         <AdminDialog open {...feedback.dialog} onClose={feedback.closeDialog} />
       ) : null}

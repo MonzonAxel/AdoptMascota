@@ -2,8 +2,7 @@
   padding-bottom: 4rem;
 }
 
-.admin-pets-page__toolbar,
-.admin-pets-page__pagination {
+.admin-pets-page__toolbar {
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -19,10 +18,6 @@
   border-radius: 0.4rem;
   background: var(--card);
   color: var(--foreground);
-}
-
-.admin-pets-page__pagination {
-  justify-content: flex-end;
 }
 
 .admin-page__heading-row {

@@ -1,12 +1,13 @@
-import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
-import { AnimalForm } from '@/components/AnimalForm/AnimalForm'
 import { AdminDialog } from '@/components/AdminDialog/AdminDialog'
 import { PageHeader } from '@/components/PageHeader/PageHeader'
 import { StatusBadge } from '@/components/StatusBadge/StatusBadge'
 import { Button } from '@/components/Button/Button'
+import { AdminPagination } from '@/pages/admin/components/AdminPagination'
+import { AnimalForm } from '@/pages/admin/components/forms/AnimalForm'
 import { useAdminDialog } from '@/hooks/useAdminDialog'
 import type { DatosCrearAnimal, EstadoAnimal } from '@/types/animal'
 import { animalesService } from '@/services/animalesService'
@@ -41,38 +42,47 @@ export function AdminPetsPage() {
     enabled: animalEnEdicionId !== null,
   })
   const crearMutation = useMutation({
-    mutationFn: ({ datos, fotos }: { datos: DatosCrearAnimal; fotos: File[] }) =>
-      animalesService.crear(datos, fotos),
+    mutationFn: ({ datos, fotos, indiceFotoPrincipal }: {
+      datos: DatosCrearAnimal
+      fotos: File[]
+      indiceFotoPrincipal: number | null
+    }) => animalesService.crear(datos, fotos, indiceFotoPrincipal),
     onSuccess: (animal) => {
       queryClient.setQueryData(['mascota', animal.id], animal)
       return queryClient.invalidateQueries({ queryKey: ['mascotas'] })
     },
   })
   const actualizarMutation = useMutation({
-    mutationFn: async ({ id, datos, fotos }: { id: number; datos: DatosCrearAnimal; fotos: File[] }) => {
+    mutationFn: async ({
+      id,
+      datos,
+      fotos,
+      indiceFotoPrincipal,
+      fotoPrincipalId,
+      fotosAEliminar,
+    }: {
+      id: number
+      datos: DatosCrearAnimal
+      fotos: File[]
+      indiceFotoPrincipal: number | null
+      fotoPrincipalId: number | null
+      fotosAEliminar: number[]
+    }) => {
       let animal = await animalesService.actualizar(id, datos)
-      if (fotos.length) animal = await animalesService.agregarFotos(id, fotos)
+      if (fotos.length) {
+        animal = await animalesService.agregarFotos(id, fotos, indiceFotoPrincipal)
+      }
+      for (const fotoId of fotosAEliminar) {
+        animal = await animalesService.eliminarFoto(id, fotoId)
+      }
+      if (fotoPrincipalId !== null) {
+        animal = await animalesService.establecerFotoPrincipal(id, fotoPrincipalId)
+      }
       return animal
     },
     onSuccess: (animal, variables) => {
       queryClient.setQueryData(['mascota', variables.id], animal)
       return queryClient.invalidateQueries({ queryKey: ['mascotas'] })
-    },
-  })
-  const principalMutation = useMutation({
-    mutationFn: ({ animalId, fotoId }: { animalId: number; fotoId: number }) =>
-      animalesService.establecerFotoPrincipal(animalId, fotoId),
-    onSuccess: (animal, variables) => {
-      queryClient.setQueryData(['mascota', variables.animalId], animal)
-      queryClient.invalidateQueries({ queryKey: ['mascotas'] })
-    },
-  })
-  const eliminarFotoMutation = useMutation({
-    mutationFn: ({ animalId, fotoId }: { animalId: number; fotoId: number }) =>
-      animalesService.eliminarFoto(animalId, fotoId),
-    onSuccess: (animal, variables) => {
-      queryClient.setQueryData(['mascota', variables.animalId], animal)
-      queryClient.invalidateQueries({ queryKey: ['mascotas'] })
     },
   })
   const eliminarMutation = useMutation({
@@ -82,12 +92,28 @@ export function AdminPetsPage() {
   const animales = animalesQuery.data?.items ?? []
   const animalEnEdicion = detalleQuery.data
 
-  async function guardarAnimal(datos: DatosCrearAnimal, fotos: File[]) {
+  async function guardarAnimal(
+    datos: DatosCrearAnimal,
+    fotos: File[],
+    fotoPrincipalId: number | null,
+    indiceFotoPrincipal: number | null,
+    fotosAEliminar: number[],
+  ) {
     setMensajeError('')
     const esEdicion = animalEnEdicionId !== null
     try {
-      if (animalEnEdicionId === null) await crearMutation.mutateAsync({ datos, fotos })
-      else await actualizarMutation.mutateAsync({ id: animalEnEdicionId, datos, fotos })
+      if (animalEnEdicionId === null) {
+        await crearMutation.mutateAsync({ datos, fotos, indiceFotoPrincipal })
+      } else {
+        await actualizarMutation.mutateAsync({
+          id: animalEnEdicionId,
+          datos,
+          fotos,
+          fotoPrincipalId,
+          indiceFotoPrincipal,
+          fotosAEliminar,
+        })
+      }
       setMostrarFormulario(false)
       setAnimalEnEdicionId(null)
       feedback.showSuccess(
@@ -96,28 +122,6 @@ export function AdminPetsPage() {
       )
     } catch (error) {
       setMensajeError(error instanceof Error ? error.message : 'No se pudo guardar la mascota.')
-    }
-  }
-
-  async function marcarFotoPrincipal(fotoId: number) {
-    if (animalEnEdicionId === null) return
-    try {
-      await principalMutation.mutateAsync({ animalId: animalEnEdicionId, fotoId })
-      cancelarFormulario()
-      feedback.showSuccess('Foto principal actualizada', 'La galería de la mascota se actualizó correctamente.')
-    } catch (error) {
-      setMensajeError(error instanceof Error ? error.message : 'No se pudo actualizar la foto principal.')
-    }
-  }
-
-  async function eliminarFoto(fotoId: number) {
-    if (animalEnEdicionId === null) return
-    try {
-      await eliminarFotoMutation.mutateAsync({ animalId: animalEnEdicionId, fotoId })
-      cancelarFormulario()
-      feedback.showSuccess('Foto eliminada', 'La foto se quitó de la galería de la mascota.')
-    } catch (error) {
-      setMensajeError(error instanceof Error ? error.message : 'No se pudo eliminar la foto.')
     }
   }
 
@@ -190,8 +194,6 @@ export function AdminPetsPage() {
               key={animalEnEdicionId ?? 'nueva'}
               animal={animalEnEdicionId === null ? undefined : animalEnEdicion}
               onGuardar={guardarAnimal}
-              onFotoPrincipal={marcarFotoPrincipal}
-              onEliminarFoto={eliminarFoto}
               onCancelar={cancelarFormulario}
             />
           )}
@@ -281,29 +283,12 @@ export function AdminPetsPage() {
           </tbody>
         </table>
       </section>
-      <div className="admin-pets-page__pagination">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label="Página anterior"
-          disabled={pagina <= 1 || animalesQuery.isFetching}
-          onClick={() => setPagina((actual) => actual - 1)}
-        >
-          <ChevronLeft size={16} aria-hidden="true" />
-        </Button>
-        <span>Página {animalesQuery.data?.page ?? pagina} de {animalesQuery.data?.totalPages ?? 1}</span>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label="Página siguiente"
-          disabled={pagina >= (animalesQuery.data?.totalPages ?? 1) || animalesQuery.isFetching}
-          onClick={() => setPagina((actual) => actual + 1)}
-        >
-          <ChevronRight size={16} aria-hidden="true" />
-        </Button>
-      </div>
+      <AdminPagination
+        pagina={animalesQuery.data?.page ?? pagina}
+        totalPaginas={animalesQuery.data?.totalPages ?? 1}
+        cargando={animalesQuery.isFetching}
+        onCambiarPagina={setPagina}
+      />
       {feedback.dialog ? (
         <AdminDialog open {...feedback.dialog} onClose={feedback.closeDialog} />
       ) : null}

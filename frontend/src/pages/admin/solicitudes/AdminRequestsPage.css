@@ -1,5 +1,4 @@
-.admin-requests-page__toolbar,
-.admin-requests-page__pagination {
+.admin-requests-page__toolbar {
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -15,10 +14,6 @@
   border-radius: 0.4rem;
   background: var(--card);
   color: var(--foreground);
-}
-
-.admin-requests-page__pagination {
-  justify-content: flex-end;
 }
 
 .admin-requests-page__actions {
