@@ -5,8 +5,8 @@ import { Button } from '@/components/Button/Button'
 import type { DatosActualizarUsuario, DatosCrearUsuario, Usuario } from '@/types/usuario'
 import { esquemaUsuario, type DatosFormularioUsuario, type UsuarioValidado } from '@/schemas/usuarioSchema'
 
-import '../forms/adminForms.css'
 import './UsuarioForm.css'
+import './adminForms.css'
 
 type UsuarioFormProps = {
   usuario?: Usuario

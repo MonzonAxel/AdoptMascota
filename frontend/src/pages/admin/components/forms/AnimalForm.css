@@ -74,14 +74,62 @@
   object-fit: cover;
 }
 
+.animal-form__preview--pending-removal img {
+  opacity: 0.35;
+}
+
+.animal-form__primary-photo,
 .animal-form__remove-photo {
   position: absolute;
-  top: 0.2rem;
   right: 0.2rem;
   width: 1.6rem;
   min-height: 1.6rem;
   padding: 0;
   background: var(--card);
+}
+
+.animal-form__primary-photo {
+  top: 0.2rem;
+}
+
+.animal-form__remove-photo {
+  bottom: 0.2rem;
+}
+
+.animal-form__primary-badge {
+  position: absolute;
+  bottom: 0.2rem;
+  left: 0.2rem;
+  max-width: calc(100% - 2rem);
+  overflow: hidden;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  background: var(--card);
+  color: var(--primary);
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.animal-form__primary-note {
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+}
+
+.animal-form__pending-removal-label {
+  position: absolute;
+  inset: 50% 0.15rem auto;
+  transform: translateY(-50%);
+  padding: 0.2rem;
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  color: var(--destructive);
+  font-size: 0.56rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
 }
 
 @media (max-width: 760px) {
