@@ -55,10 +55,6 @@ export function HomePage() {
         <div className="home-page__hero-overlay" />
         <div className="page-container home-page__hero-content">
           <div className="home-page__hero-copy">
-            <div className="home-page__pill">
-              <Sparkles size={14} />
-              <span>Plataforma de adopción responsable</span>
-            </div>
             <h1 className="home-page__title">Una nueva historia puede empezar hoy.</h1>
             <p className="home-page__description">
               Encontrá un perro o gato que encaje con tu forma de vivir y da el primer paso
@@ -72,24 +68,6 @@ export function HomePage() {
                   <ArrowRight size={18} aria-hidden="true" />
                 </Link>
               </Button>
-              <Link className="home-page__secondary-action" to="/login">
-                Acceso administrativo →
-              </Link>
-            </div>
-
-            <div className="home-page__badges">
-              <div className="home-page__badge-item">
-                <ShieldCheck size={18} />
-                <span>Salud al día</span>
-              </div>
-              <div className="home-page__badge-item">
-                <Heart size={18} />
-                <span>Adopción sin costo</span>
-              </div>
-              <div className="home-page__badge-item">
-                <Sparkles size={18} />
-                <span>Acompañamiento continuo</span>
-              </div>
             </div>
           </div>
         </div>
@@ -102,9 +80,6 @@ export function HomePage() {
             <p className="page-kicker">Guía de adopción</p>
             <h2 id="steps-title">Pasos para realizar la adopción</h2>
           </div>
-          <p className="home-page__section-subtitle">
-            Un proceso claro, empático y pensado en el bienestar de cada animal.
-          </p>
         </div>
 
         <div className="home-page__step-grid">
@@ -147,7 +122,7 @@ export function HomePage() {
       </section>
 
       {/* Banner de compromiso */}
-      <section className="page-container home-page__banner">
+      {/* <section className="page-container home-page__banner">
         <div className="home-page__banner-box">
           <div className="home-page__banner-icon">
             <Heart size={36} strokeWidth={2} />
@@ -156,15 +131,14 @@ export function HomePage() {
             <h3>¿Por qué adoptar en lugar de comprar?</h3>
             <p>
               Adoptar salva vidas y le da una segunda oportunidad a un animal rescatado de la calle o
-              del abandono. Cada perro o gato en nuestro refugio recibe atención veterinaria, cariño y
-              socialización para integrarse plenamente a tu familia.
+              del abandono. Cada perro o gato en nuestro refugio recibe atención veterinaria, cariño y amor, listos para integrarse a tu familia.
             </p>
           </div>
           <Button asChild variant="outline">
-            <Link to="/mascotas">Conocerlos ahora</Link>
+            <Link to="/mascotas">Conocelos ahora</Link>
           </Button>
         </div>
-      </section>
+      </section> */}
     </div>
   )
 }

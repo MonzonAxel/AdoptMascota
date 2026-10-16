@@ -1,7 +1,7 @@
 import { UserRound } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 
@@ -19,7 +19,7 @@ type DatosFormularioInicioSesion = z.infer<typeof esquemaInicioSesion>
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const { signIn } = useAuth()
+  const { signIn, isAuthenticated, isLoading, sessionError, retrySession } = useAuth()
   const [mensajeError, setMensajeError] = useState('')
   const {
     register,
@@ -32,6 +32,24 @@ export function LoginPage() {
       contrasena: '',
     },
   })
+
+  if (isLoading) {
+    return <section className="login-page" role="status">Validando sesión...</section>
+  }
+
+  if (isAuthenticated) return <Navigate to="/admin/mascotas" replace />
+
+  if (sessionError) {
+    return (
+      <section className="login-page" aria-labelledby="login-title">
+        <h1 id="login-title">No se pudo validar la sesión</h1>
+        <p className="login-page__error" role="alert">{sessionError}</p>
+        <Button className="login-page__submit" onClick={() => { void retrySession() }}>
+          Reintentar
+        </Button>
+      </section>
+    )
+  }
 
   async function onSubmit(datos: DatosFormularioInicioSesion) {
     setMensajeError('')
