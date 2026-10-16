@@ -7,7 +7,7 @@ Node.js + Express + Sequelize + MySQL 8. Arquitectura en capas: **MVC + servicio
 npm install
 cp .env.example .env        # completar DB_USER / DB_PASSWORD / JWT_SECRET
 # crear la base en MySQL:  CREATE DATABASE adoptmascota CHARACTER SET utf8mb4;
-npm run db:migrate          # crea las 7 tablas
+npm run db:migrate          # aplica las migraciones pendientes
 npm run db:seed             # admin inicial + 4 mascotas de ejemplo
 npm run dev                 # http://localhost:3000/api  (docs: /api/docs)
 ```
@@ -41,7 +41,9 @@ uploads/         imágenes locales (se sirven en /uploads)
 - Los valores de `tipo_color` se definieron como supuesto en `constants/enums.js`.
 
 ## Autenticación (etapa 2)
-- Login: `POST /api/auth/login` → devuelve un token JWT (dura 8 h). Usarlo como `Authorization: Bearer <token>`.
+- Login: `POST /api/auth/login` → establece una cookie JWT `HttpOnly` (por defecto expira en 8 h; configurable con `JWT_EXPIRES_IN`). El token no se devuelve en el JSON.
+- Logout: `POST /api/auth/logout` revoca la sesión en la base y elimina la cookie; un JWT copiado deja de servir de inmediato.
+- Ejecutar `npm run db:migrate` para crear la tabla `sesiones_auth` antes de iniciar sesión con esta versión.
 - `JWT_SECRET` en el `.env` es obligatorio y tiene que ser propio (el servidor no arranca con el valor de ejemplo).
 - Roles: `admin` gestiona usuarios; `administrativo` no. Rutas de usuarios: `/api/usuarios` (solo admin) y `/api/usuarios/me` (cualquier usuario logueado).
 - Usuario inicial (seeder): `admin@adoptmascota.com` / `Admin1234!` (cambiar en producción).
