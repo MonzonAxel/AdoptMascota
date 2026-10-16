@@ -1,27 +1,53 @@
 const { Usuario } = require('../models');
+const { SesionAuth } = require('../models');
+const { Op } = require('sequelize');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
 const { verificarJwt } = require('../utils/jwt');
+const { AUTH_COOKIE_NAME, clearAuthCookie } = require('../utils/authCookie');
 
-// Lee el token del pedido y devuelve al usuario (buscándolo en la base en cada pedido:
-// si fue dado de baja o le cambiaron el rol, el efecto es inmediato aunque el token siga vigente).
-const usuarioDesdeToken = async (req) => {
-  const [tipo, token] = (req.headers.authorization || '').split(' ');
-  if (tipo !== 'Bearer' || !token) throw new AppError('Tenés que iniciar sesión', 401);
+const tokenDelPedido = (req) => {
+  const cookie = req.cookies && req.cookies[AUTH_COOKIE_NAME];
+  if (cookie) return cookie;
 
-  const payload = verificarJwt(token);
-  const usuario = await Usuario.findByPk(payload.id, { include: [{ association: 'perfil' }] });
-  if (!usuario) throw new AppError('El usuario ya no existe o fue dado de baja', 401);
-  return usuario;
+  const [tipo, ...partes] = (req.headers.authorization || '').split(' ');
+  return tipo === 'Bearer' ? partes.join(' ') : null;
 };
 
-// 1) "¿Quién sos?" -> revisa el token y deja al usuario en req.usuario
+const usuarioDesdeToken = async (req) => {
+  const token = tokenDelPedido(req);
+  if (!token) throw new AppError('Tenés que iniciar sesión', 401);
+
+  const payload = verificarJwt(token);
+  if (!payload.sid) throw new AppError('La sesión no es válida', 401);
+
+  const sesion = await SesionAuth.findOne({
+    where: {
+      id: payload.sid,
+      usuario_id: payload.id,
+      expira_en: { [Op.gt]: new Date() },
+    },
+    include: [{ association: 'usuario', include: [{ association: 'perfil' }] }],
+  });
+  if (!sesion || !sesion.usuario) {
+    throw new AppError('La sesión venció o fue cerrada; iniciá sesión de nuevo', 401);
+  }
+
+  return { usuario: sesion.usuario, sessionId: sesion.id };
+};
+
 const verificarToken = asyncHandler(async (req, res, next) => {
-  req.usuario = await usuarioDesdeToken(req);
-  next();
+  try {
+    const sesion = await usuarioDesdeToken(req);
+    req.usuario = sesion.usuario;
+    req.authSessionId = sesion.sessionId;
+    return next();
+  } catch (err) {
+    if (err.status === 401 && req.cookies && req.cookies[AUTH_COOKIE_NAME]) clearAuthCookie(res);
+    return next(err);
+  }
 });
 
-// 2) "¿Tenés permiso?" -> se usa DESPUÉS de verificarToken.  Ej: autorizarRoles('admin')
 const autorizarRoles = (...rolesPermitidos) => (req, res, next) => {
   if (!req.usuario) return next(new AppError('Tenés que iniciar sesión', 401));
   if (!rolesPermitidos.includes(req.usuario.rol)) {
@@ -30,14 +56,14 @@ const autorizarRoles = (...rolesPermitidos) => (req, res, next) => {
   return next();
 };
 
-// 3) Para rutas públicas que muestran más cosas al personal.
-//    Sin token (o con un token vencido/inválido) se trata como visitante: la galería pública
-//    tiene que funcionar aunque en el navegador haya quedado una sesión vieja.
 const verificarTokenOpcional = async (req, res, next) => {
-  if (req.headers.authorization) {
+  if (tokenDelPedido(req)) {
     try {
-      req.usuario = await usuarioDesdeToken(req);
+      const sesion = await usuarioDesdeToken(req);
+      req.usuario = sesion.usuario;
+      req.authSessionId = sesion.sessionId;
     } catch (err) {
+      if (err.status === 401 && req.cookies && req.cookies[AUTH_COOKIE_NAME]) clearAuthCookie(res);
       if (!(err instanceof AppError)) return next(err); // error real (ej. base caída): no lo escondemos
     }
   }

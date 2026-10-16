@@ -5,8 +5,9 @@ info:
   description: |
     API REST del centro de adopción. Respuestas en formato `{ success, message, data }`.
 
-    **Cómo probar endpoints protegidos:** hacé login en `POST /auth/login`, copiá el valor de
-    `data.token`, apretá el botón **Authorize** (arriba a la derecha) y pegalo ahí.
+    **Cómo probar endpoints protegidos:** hacé login en `POST /auth/login`. La API guarda la sesión
+    en una cookie `HttpOnly`, que el navegador envía automáticamente. Las integraciones confiables
+    también pueden usar `Authorization: Bearer <token>`.
 servers:
   - url: http://localhost:3000/api
 tags:
@@ -28,6 +29,7 @@ tags:
       `disponible`. **Crear, editar, dar de baja y manejar fotos** requiere estar logueado (admin o administrativo).
 components:
   securitySchemes:
+    cookieAuth: { type: apiKey, in: cookie, name: adoptmascota_token }
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
   schemas:
     Ok:
@@ -414,21 +416,21 @@ paths:
 
   /auth/login:
     post:
-      summary: Iniciar sesión (devuelve un JWT)
+      summary: Iniciar sesión (establece cookie HttpOnly)
       tags: [Autenticación]
       requestBody:
         required: true
         content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' } } }
       responses:
-        '200': { description: Sesión iniciada. `data.token` es el JWT. }
+        '200': { description: Sesión iniciada; establece la cookie HttpOnly y devuelve usuario y expiración. }
         '401': { description: Email o contraseña incorrectos }
         '429': { description: 'Demasiados intentos fallidos de inicio de sesión (límite por IP)' }
         '422': { $ref: '#/components/responses/DatosInvalidos' }
   /auth/logout:
     post:
-      summary: Cerrar sesión (el frontend debe descartar el token)
+      summary: Cerrar sesión (revoca la sesión actual)
       tags: [Autenticación]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       responses:
         '200': { description: Sesión cerrada }
         '401': { $ref: '#/components/responses/NoAutenticado' }
@@ -437,7 +439,7 @@ paths:
     get:
       summary: Perfil del usuario logueado
       tags: [Usuarios]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       responses:
         '200': { description: Datos del usuario }
         '401': { $ref: '#/components/responses/NoAutenticado' }
@@ -445,7 +447,7 @@ paths:
     get:
       summary: Listar usuarios (solo admin)
       tags: [Usuarios]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters:
         - { name: estado, in: query, description: Por defecto lista usuarios activos., schema: { type: string, enum: [activos, inactivos], default: activos } }
       responses:
@@ -455,7 +457,7 @@ paths:
     post:
       summary: Crear usuario (solo admin)
       tags: [Usuarios]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       requestBody:
         required: true
         content: { application/json: { schema: { $ref: '#/components/schemas/UsuarioCrear' } } }
@@ -471,7 +473,7 @@ paths:
     get:
       summary: Ver un usuario (solo admin)
       tags: [Usuarios]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       responses:
         '200': { description: Datos del usuario }
         '401': { $ref: '#/components/responses/NoAutenticado' }
@@ -480,7 +482,7 @@ paths:
     put:
       summary: Editar un usuario (solo admin)
       tags: [Usuarios]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       requestBody:
         required: true
         content: { application/json: { schema: { $ref: '#/components/schemas/UsuarioActualizar' } } }
@@ -495,7 +497,7 @@ paths:
     delete:
       summary: Dar de baja un usuario (baja lógica, solo admin)
       tags: [Usuarios]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       responses:
         '200': { description: Usuario dado de baja }
         '400': { description: No podés eliminar tu propio usuario }
@@ -508,7 +510,7 @@ paths:
       summary: Reactivar un usuario dado de baja (solo admin)
       description: Restaura la cuenta y registra la acción en el historial de auditoría.
       tags: [Usuarios]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters: [{ $ref: '#/components/parameters/IdUsuario' }]
       responses:
         '200': { description: Usuario reactivado }
@@ -521,11 +523,11 @@ paths:
     get:
       summary: Listar mascotas con filtros y paginación
       description: |
-        Público: solo devuelve mascotas `disponible`. Si mandás un token válido (personal), ves todas
+        Público: solo devuelve mascotas `disponible`. Si mandás una cookie o token válido (personal), ves todas
         y podés filtrar por `estado`. Las más nuevas aparecen primero.
         Los filtros con varias opciones se separan con coma, por ejemplo `especie=perro,gato`.
       tags: [Mascotas]
-      security: [{}, { bearerAuth: [] }]
+      security: [{}, { cookieAuth: [] }, { bearerAuth: [] }]
       parameters:
         - { name: especie, in: query, description: Uno o varios valores, schema: { type: array, items: { type: string, enum: [perro, gato] } }, style: form, explode: false }
         - { name: tamano, in: query, description: Uno o varios valores, schema: { type: array, items: { type: string, enum: [pequeno, mediano, grande] } }, style: form, explode: false }
@@ -547,7 +549,7 @@ paths:
         Se puede enviar como **multipart/form-data** (con fotos) o como **JSON** (sin fotos; después se suben con
         `POST /mascotas/{id}/fotos`). Si se suben fotos, la primera queda como portada.
       tags: [Mascotas]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -578,7 +580,7 @@ paths:
       summary: Detalle de una mascota
       description: El público solo puede ver mascotas `disponible` (las demás responden 404).
       tags: [Mascotas]
-      security: [{}, { bearerAuth: [] }]
+      security: [{}, { cookieAuth: [] }, { bearerAuth: [] }]
       parameters: [{ $ref: '#/components/parameters/IdMascota' }]
       responses:
         '200':
@@ -588,7 +590,7 @@ paths:
     put:
       summary: Editar una mascota
       tags: [Mascotas]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters: [{ $ref: '#/components/parameters/IdMascota' }]
       requestBody:
         required: true
@@ -606,7 +608,7 @@ paths:
       summary: Dar de baja una mascota (baja lógica)
       description: No se puede si tiene solicitudes de adopción en estado `pendiente` o `en_revision`.
       tags: [Mascotas]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters: [{ $ref: '#/components/parameters/IdMascota' }]
       responses:
         '200': { description: Mascota dada de baja }
@@ -620,7 +622,7 @@ paths:
       summary: Agregar fotos a una mascota
       description: Hasta 6 fotos por mascota en total. Si todavía no tenía fotos, la primera queda como portada.
       tags: [Mascotas]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters: [{ $ref: '#/components/parameters/IdMascota' }]
       requestBody:
         required: true
@@ -641,7 +643,7 @@ paths:
       summary: Eliminar una foto
       description: Si era la portada, la siguiente foto pasa a serlo automáticamente.
       tags: [Mascotas]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters:
         - { $ref: '#/components/parameters/IdMascota' }
         - { $ref: '#/components/parameters/IdFoto' }
@@ -657,7 +659,7 @@ paths:
     patch:
       summary: Elegir cuál es la foto de portada
       tags: [Mascotas]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters:
         - { $ref: '#/components/parameters/IdMascota' }
         - { $ref: '#/components/parameters/IdFoto' }
@@ -700,7 +702,7 @@ paths:
       summary: Listar solicitudes (personal)
       description: Las más nuevas primero. Para ver los datos completos de una, usar `GET /solicitudes/{id}`.
       tags: [Solicitudes]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters:
         - { name: estado, in: query, description: Uno o varios valores, schema: { type: array, items: { type: string, enum: [pendiente, en_revision, aprobada, rechazada] } }, style: form, explode: false }
         - { name: animal_id, in: query, description: Solo las solicitudes de esa mascota, schema: { type: integer } }
@@ -719,7 +721,7 @@ paths:
       summary: Detalle de una solicitud (personal)
       description: Incluye los datos del formulario, la mascota, las observaciones y el historial de cambios.
       tags: [Solicitudes]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters: [{ $ref: '#/components/parameters/IdSolicitud' }]
       responses:
         '200':
@@ -739,7 +741,7 @@ paths:
         Efectos: al **aprobar**, la mascota pasa a `adoptado`. Al **rechazar**, el estado de la mascota no cambia y queda bajo control del personal.
         El cambio queda registrado en el historial con quién lo hizo. Se puede adjuntar una nota en `observacion`.
       tags: [Solicitudes]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters: [{ $ref: '#/components/parameters/IdSolicitud' }]
       requestBody:
         required: true
@@ -759,7 +761,7 @@ paths:
       summary: Agregar una observación a una solicitud (personal)
       description: Notas internas del refugio. Se pueden agregar también a solicitudes ya resueltas.
       tags: [Solicitudes]
-      security: [{ bearerAuth: [] }]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters: [{ $ref: '#/components/parameters/IdSolicitud' }]
       requestBody:
         required: true
