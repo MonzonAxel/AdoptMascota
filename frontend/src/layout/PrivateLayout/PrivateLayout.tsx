@@ -1,4 +1,5 @@
-import { ClipboardList, LayoutDashboard, LogOut, PawPrint, Users } from 'lucide-react'
+import { ClipboardList, LogOut, PawPrint, Users } from 'lucide-react'
+import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 import { Brand } from '@/components/Brand/Brand'
@@ -16,6 +17,16 @@ const adminLinks = [
 export function PrivateLayout() {
   const { signOut, usuario } = useAuth()
   const { pathname } = useLocation()
+  const [logoutError, setLogoutError] = useState('')
+
+  async function cerrarSesion() {
+    setLogoutError('')
+    try {
+      await signOut()
+    } catch (error) {
+      setLogoutError(error instanceof Error ? error.message : 'No se pudo cerrar la sesión.')
+    }
+  }
 
   return (
     <div className="private-layout">
@@ -41,7 +52,8 @@ export function PrivateLayout() {
           ))}
         </nav>
         <div className="private-layout__sidebar-footer">
-          <Button className="private-layout__logout" variant="ghost" onClick={() => { void signOut() }}>
+          {logoutError ? <p className="private-layout__logout-error" role="alert">{logoutError}</p> : null}
+          <Button className="private-layout__logout" variant="ghost" onClick={() => { void cerrarSesion() }}>
             <LogOut size={17} aria-hidden="true" />
             Cerrar sesion
           </Button>

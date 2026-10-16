@@ -68,6 +68,12 @@
   color: var(--muted-foreground);
 }
 
+.private-layout__logout-error {
+  margin: 0 0 0.5rem;
+  color: var(--destructive);
+  font-size: 0.78rem;
+}
+
 .private-layout__main {
   min-width: 0;
   flex: 1;

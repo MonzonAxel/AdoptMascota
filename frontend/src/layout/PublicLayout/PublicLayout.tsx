@@ -2,10 +2,13 @@ import { LogIn, Search } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { Brand } from '@/components/Brand/Brand'
+import { useAuth } from '@/hooks/useAuth'
 
 import './PublicLayout.css'
 
 export function PublicLayout() {
+  const { isAuthenticated } = useAuth()
+
   return (
     <div className="public-layout">
       <header className="public-layout__header">
@@ -19,9 +22,9 @@ export function PublicLayout() {
               <Search size={16} aria-hidden="true" />
               Mascotas
             </NavLink>
-            <NavLink className="public-layout__login" to="/login">
+            <NavLink className="public-layout__login" to={isAuthenticated ? '/admin' : '/login'}>
               <LogIn size={16} aria-hidden="true" />
-              Acceso admin
+              {isAuthenticated ? 'Panel admin' : 'Acceso admin'}
             </NavLink>
           </nav>
         </div>
