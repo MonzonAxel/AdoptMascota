@@ -1,23 +1,16 @@
 import axios from 'axios'
 
-const TOKEN_STORAGE_KEY = 'adoptmascota_token'
-
-export const tokenStorage = {
-  get: () => (typeof window === 'undefined' ? null : window.sessionStorage.getItem(TOKEN_STORAGE_KEY)),
-  set: (token: string) => window.sessionStorage.setItem(TOKEN_STORAGE_KEY, token),
-  clear: () => window.sessionStorage.removeItem(TOKEN_STORAGE_KEY),
-}
+export const AUTH_SESSION_EXPIRED_EVENT = 'adoptmascota:session-expired'
 
 export const clienteApi = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api',
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
 clienteApi.interceptors.request.use((config) => {
-  const token = tokenStorage.get()
-  if (token) config.headers.set('Authorization', `Bearer ${token}`)
   if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
     config.headers.delete('Content-Type')
   }
@@ -41,6 +34,15 @@ clienteApi.interceptors.response.use(
   (error: unknown) => {
     if (axios.isAxiosError<{ message?: string }>(error) && error.response?.data?.message) {
       error.message = error.response.data.message
+    }
+    if (
+      axios.isAxiosError(error) &&
+      error.response?.status === 401 &&
+      !error.config?.url?.includes('/auth/login') &&
+      !error.config?.url?.includes('/auth/logout') &&
+      typeof window !== 'undefined'
+    ) {
+      window.dispatchEvent(new Event(AUTH_SESSION_EXPIRED_EVENT))
     }
     return Promise.reject(error)
   },

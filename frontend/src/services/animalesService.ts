@@ -109,7 +109,11 @@ const mapearAnimal = (origen: AnimalApi): Animal => {
   }
 }
 
-const datosAFormData = (datos: DatosCrearAnimal, fotos: File[]) => {
+const datosAFormData = (
+  datos: DatosCrearAnimal,
+  fotos: File[],
+  indiceFotoPrincipal: number | null,
+) => {
   const formData = new FormData()
   const campos: Record<string, unknown> = {
     nombre: datos.nombre,
@@ -130,6 +134,9 @@ const datosAFormData = (datos: DatosCrearAnimal, fotos: File[]) => {
     if (valor !== undefined && valor !== null) formData.append(campo, String(valor))
   })
   fotos.forEach((foto) => formData.append('fotos', foto))
+  if (indiceFotoPrincipal !== null) {
+    formData.append('foto_principal_index', String(indiceFotoPrincipal))
+  }
   return formData
 }
 
@@ -180,8 +187,15 @@ export const animalesService = {
     return mapearAnimal(data)
   },
 
-  async crear(datos: DatosCrearAnimal, fotos: File[] = []) {
-    const { data } = await clienteApi.post<AnimalApi>('/mascotas', datosAFormData(datos, fotos))
+  async crear(
+    datos: DatosCrearAnimal,
+    fotos: File[] = [],
+    indiceFotoPrincipal: number | null = null,
+  ) {
+    const { data } = await clienteApi.post<AnimalApi>(
+      '/mascotas',
+      datosAFormData(datos, fotos, indiceFotoPrincipal),
+    )
     return mapearAnimal(data)
   },
 
@@ -199,9 +213,12 @@ export const animalesService = {
     return data
   },
 
-  async agregarFotos(id: number, fotos: File[]) {
+  async agregarFotos(id: number, fotos: File[], indiceFotoPrincipal: number | null = null) {
     const formData = new FormData()
     fotos.forEach((foto) => formData.append('fotos', foto))
+    if (indiceFotoPrincipal !== null) {
+      formData.append('foto_principal_index', String(indiceFotoPrincipal))
+    }
     const { data } = await clienteApi.post<AnimalApi>(`/mascotas/${id}/fotos`, formData)
     return mapearAnimal(data)
   },
