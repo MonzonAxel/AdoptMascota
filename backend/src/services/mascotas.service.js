@@ -87,14 +87,17 @@ const obtener = async (id, { baseUrl, esPersonal }) => {
   return formatearMascotaDetalle(animal, fotos, baseUrl, esPersonal);
 };
 
-const crear = async (datos, archivos, usuario, ctx) => {
+const crear = async (datos, archivos, usuario, ctx, indiceFotoPrincipal = null) => {
   // Transacción: o se guarda la mascota CON sus fotos, o no se guarda nada.
   const animal = await sequelize.transaction(async (t) => {
     const nuevo = await Animal.create(
       { ...datos, creado_por: usuario.id, actualizado_por: usuario.id },
       { transaction: t },
     );
-    await fotosService.agregar(nuevo.id, archivos, { transaction: t });
+    await fotosService.agregar(nuevo.id, archivos, {
+      transaction: t,
+      indicePrincipal: indiceFotoPrincipal,
+    });
     await auditoria.registrar(
       { tabla: 'animales', registroId: nuevo.id, usuarioId: usuario.id, accion: 'crear' },
       { transaction: t },

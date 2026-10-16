@@ -39,7 +39,13 @@ const obtener = asyncHandler(async (req, res) =>
 // ---- Personal (admin y administrativo) ----
 const crear = conLimpieza(async (req, res) => {
   const datos = validarMascota(req.body, { alta: true });
-  const mascota = await mascotasService.crear(datos, req.files || [], req.usuario, contexto(req));
+  const mascota = await mascotasService.crear(
+    datos,
+    req.files || [],
+    req.usuario,
+    contexto(req),
+    req.body.foto_principal_index,
+  );
   return success(res, mascota, 'Mascota creada', 201);
 });
 
@@ -60,7 +66,9 @@ const agregarFotos = conLimpieza(async (req, res) => {
   const archivos = req.files || [];
   if (archivos.length === 0) throw new AppError('Subí al menos una foto en el campo "fotos"', 400);
   await mascotasService.asegurarExiste(id);
-  await fotosService.agregar(id, archivos);
+  await fotosService.agregar(id, archivos, {
+    indicePrincipal: req.body.foto_principal_index,
+  });
   return success(res, await mascotasService.obtener(id, comoPersonal(req)), 'Fotos agregadas', 201);
 });
 

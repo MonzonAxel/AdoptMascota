@@ -185,8 +185,12 @@ components:
           properties:
             fotos:
               type: array
-              description: Hasta 6 imágenes JPG, PNG o WEBP. La primera queda como portada.
+              description: Hasta 6 imágenes JPG, PNG o WEBP. Si no se envía índice, la primera será portada cuando no haya una actual.
               items: { type: string, format: binary }
+            foto_principal_index:
+              type: integer
+              minimum: 0
+              description: Índice (base cero) de la imagen enviada que quedará como portada.
     MascotaActualizar:
       type: object
       description: Enviá solo los campos que quieras cambiar. Mandar `""` o `null` en raza, edad o comportamiento los borra.
@@ -210,6 +214,10 @@ components:
           type: array
           description: Hasta 6 imágenes JPG, PNG o WEBP por vez (una mascota puede tener 6 en total).
           items: { type: string, format: binary }
+        foto_principal_index:
+          type: integer
+          minimum: 0
+          description: Índice (base cero) de la imagen enviada que quedará como portada; si se omite, se conserva la actual.
     SolicitudCrear:
       type: object
       required: [animal_id, nombre_apellido, email, dni, edad, telefono_celular, ocupacion, localidad_barrio, direccion, vivienda, tipo_tenencia, detalle_vivienda, personas_hogar, hay_ninos_hogar, otros_animales_hogar, frecuencia_paseo, cuidador_vacaciones]
@@ -547,7 +555,8 @@ paths:
       summary: Crear una mascota (con fotos opcionales)
       description: |
         Se puede enviar como **multipart/form-data** (con fotos) o como **JSON** (sin fotos; después se suben con
-        `POST /mascotas/{id}/fotos`). Si se suben fotos, la primera queda como portada.
+        `POST /mascotas/{id}/fotos`). Se puede elegir la portada con `foto_principal_index`; si se omite y no hay foto
+        principal, la primera imagen queda como portada.
       tags: [Mascotas]
       security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       requestBody:
@@ -620,7 +629,7 @@ paths:
   /mascotas/{id}/fotos:
     post:
       summary: Agregar fotos a una mascota
-      description: Hasta 6 fotos por mascota en total. Si todavía no tenía fotos, la primera queda como portada.
+      description: Hasta 6 fotos por mascota en total. Se puede seleccionar la portada con `foto_principal_index`; si no se envía y no existe portada actual, queda la primera imagen cargada.
       tags: [Mascotas]
       security: [{ cookieAuth: [] }, { bearerAuth: [] }]
       parameters: [{ $ref: '#/components/parameters/IdMascota' }]

@@ -1,6 +1,9 @@
+const { randomUUID } = require('crypto');
+const { Op } = require('sequelize');
 const { Usuario } = require('../models');
+const { SesionAuth } = require('../models');
 const AppError = require('../utils/AppError');
-const { firmarToken } = require('../utils/jwt');
+const { firmarToken, obtenerExpiracion } = require('../utils/jwt');
 const { formatearUsuario } = require('../utils/serializers');
 const passwordService = require('./password.service');
 
@@ -22,12 +25,22 @@ const login = async (email, password) => {
   // así nadie puede averiguar qué emails están registrados.
   if (!valido) throw new AppError('Email o contraseña incorrectos', 401);
 
+  await SesionAuth.destroy({ where: { expira_en: { [Op.lte]: new Date() } } });
+
+  const sessionId = randomUUID();
+  const token = firmarToken(usuario, sessionId);
+  const expiraEn = obtenerExpiracion(token);
+  await SesionAuth.create({ id: sessionId, usuario_id: usuario.id, expira_en: expiraEn });
+
   return {
-    token: firmarToken(usuario),
-    tipo: 'Bearer',
-    expira_en: process.env.JWT_EXPIRES_IN || '8h',
+    token,
+    expira_en: expiraEn.toISOString(),
     usuario: formatearUsuario(usuario),
   };
 };
 
-module.exports = { login };
+const logout = async (sessionId) => {
+  if (sessionId) await SesionAuth.destroy({ where: { id: sessionId } });
+};
+
+module.exports = { login, logout };

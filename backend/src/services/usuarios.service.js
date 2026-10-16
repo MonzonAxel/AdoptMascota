@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Usuario, PerfilUsuario, sequelize } = require('../models');
+const { Usuario, PerfilUsuario, SesionAuth, sequelize } = require('../models');
 const AppError = require('../utils/AppError');
 const { formatearUsuario } = require('../utils/serializers');
 const auditoria = require('./auditoria.service');
@@ -75,6 +75,7 @@ const actualizar = async (id, datos, usuarioActual) => {
     if (nuevoHash) {
       usuario.set('password_hash', nuevoHash);
       cambios.push({ campo: 'password', antiguo: null, actual: '[modificada]' });
+      await SesionAuth.destroy({ where: { usuario_id: id }, transaction: t });
     }
     if (usuario.changed()) await usuario.save({ transaction: t });
 
@@ -101,6 +102,7 @@ const eliminar = async (id, usuarioActual) => {
   if (id === usuarioActual.id) throw new AppError('No podés eliminar tu propio usuario', 400);
   const usuario = await obtener(id);
   await sequelize.transaction(async (t) => {
+    await SesionAuth.destroy({ where: { usuario_id: id }, transaction: t });
     await usuario.destroy({ transaction: t });
     await auditoria.registrar(
       { tabla: 'usuarios', registroId: id, usuarioId: usuarioActual.id, accion: 'eliminar' },

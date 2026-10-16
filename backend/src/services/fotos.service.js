@@ -29,10 +29,20 @@ const verificarImagenes = async (archivos) => {
   }
 };
 
+const validarIndicePrincipal = (valor, cantidad) => {
+  if (valor === undefined || valor === null || valor === '') return null;
+  const indice = Number(valor);
+  if (!Number.isInteger(indice) || indice < 0 || indice >= cantidad) {
+    throw new AppError('La selección de foto principal no es válida', 422);
+  }
+  return indice;
+};
+
 // Guarda en la base las fotos que multer ya dejó en el disco.
-// La primera foto de una mascota sin fotos queda como principal.
-const agregar = async (animalId, archivos, { transaction } = {}) => {
+// La primera foto queda como principal si no existe otra y no se indicó una selección.
+const agregar = async (animalId, archivos, { transaction, indicePrincipal: valorIndicePrincipal } = {}) => {
   if (!archivos.length) return [];
+  const indicePrincipal = validarIndicePrincipal(valorIndicePrincipal, archivos.length);
   await verificarImagenes(archivos);
 
   const trabajo = async (t) => {
@@ -41,7 +51,25 @@ const agregar = async (animalId, archivos, { transaction } = {}) => {
     if (existentes + archivos.length > MAX_FOTOS_POR_MASCOTA) {
       throw new AppError(`Una mascota puede tener hasta ${MAX_FOTOS_POR_MASCOTA} fotos (ya tiene ${existentes})`, 422);
     }
-    const hayPrincipal = (await FotoAnimal.count({ where: { ...where, es_principal: true }, transaction: t })) > 0;
+    const principalActual = await FotoAnimal.findOne({
+      where: { ...where, es_principal: true },
+      transaction: t,
+    });
+    const indicePrincipalNuevo = indicePrincipal
+      ?? (!principalActual && existentes === 0 ? 0 : null);
+
+    if (indicePrincipal !== null) {
+      await FotoAnimal.update({ es_principal: false }, { where, transaction: t });
+    } else if (!principalActual && existentes > 0) {
+      const primeraExistente = await FotoAnimal.findOne({
+        where,
+        order: [['orden', 'ASC'], ['id', 'ASC']],
+        transaction: t,
+      });
+      if (primeraExistente) {
+        await primeraExistente.update({ es_principal: true }, { transaction: t });
+      }
+    }
     const maxOrden = await FotoAnimal.max('orden', { where, transaction: t });
     const ultimo = Number.isFinite(maxOrden) ? maxOrden : -1;
 
@@ -49,7 +77,7 @@ const agregar = async (animalId, archivos, { transaction } = {}) => {
       archivos.map((f, i) => ({
         animal_id: animalId,
         url: `/uploads/${f.filename}`,
-        es_principal: !hayPrincipal && i === 0,
+        es_principal: indicePrincipalNuevo === i,
         orden: ultimo + 1 + i,
       })),
       { transaction: t },
