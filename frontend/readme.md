@@ -39,7 +39,25 @@ Copiar `.env.example` como `.env.local` para configurar la URL base de la API.
 - `/admin/solicitudes`: solicitudes de adopcion
 - `/admin/usuarios`: usuarios administrativos
 
-Las rutas administrativas estan protegidas por `ProtectedRoute`. La autenticacion actual es local y temporal, lista para conectarse al backend.
+Las rutas administrativas estan protegidas por `ProtectedRoute` y consultan la sesion autenticada del backend mediante una cookie `HttpOnly`.
+
+## Componentes del admin
+
+Los componentes exclusivos de administracion viven en `src/pages/admin/components`:
+
+```text
+components/
+	AdminPagination.tsx
+	forms/
+		AnimalForm.tsx
+		AnimalFormFields.tsx
+		AnimalPhotosEditor.tsx
+		UsuarioForm.tsx
+```
+
+`AnimalForm` coordina validacion, estado y guardado; `AnimalFormFields` presenta los datos de la mascota, y `AnimalPhotosEditor` concentra la seleccion y previsualizacion de fotos. Los cambios de portada y eliminacion siguen siendo pendientes hasta guardar el formulario. `AdminPagination` comparte la navegacion entre Mascotas y Solicitudes.
+
+Se mantienen en `src/components` los elementos comunes como `Button`, `AdminDialog`, `PageHeader` y `StatusBadge`, para evitar duplicarlos entre pantallas.
 
 ## Estructura de `src`
 
@@ -50,7 +68,7 @@ context/      Estado global
 hooks/        Hooks personalizados
 layout/       Layout publico, privado y de acceso
 pages/
-	admin/      Mascotas, solicitudes y usuarios del refugio
+	admin/      Mascotas, solicitudes, usuarios y componentes exclusivos del admin
 	web/        Inicio y catalogo publico
 	login/      Acceso administrativo independiente
 routes/       Enrutado y proteccion de rutas
