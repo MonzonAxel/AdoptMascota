@@ -1,0 +1,252 @@
+.adoption-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgb(38 50 56 / 60%);
+  backdrop-filter: blur(4px);
+  animation: modalFadeIn 200ms ease;
+}
+
+.adoption-modal {
+  position: relative;
+  width: min(100%, 42rem);
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--card);
+  box-shadow: 0 20px 40px rgb(38 50 56 / 20%);
+  padding: 2.25rem;
+  animation: modalSlideUp 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.adoption-modal__close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  display: inline-grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--secondary);
+  color: var(--muted-foreground);
+  transition: all 160ms ease;
+}
+
+.adoption-modal__close:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.adoption-modal__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: var(--secondary);
+  color: var(--primary);
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.adoption-modal__title {
+  margin: 0.6rem 0 0.35rem;
+  color: var(--foreground);
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.5vw, 2.3rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.adoption-modal__intro {
+  margin: 0 0 1.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.95rem;
+}
+
+.adoption-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.adoption-modal__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.adoption-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.adoption-modal__field label {
+  color: var(--foreground);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.adoption-modal__field input,
+.adoption-modal__field select,
+.adoption-modal__field textarea {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--input);
+  border-radius: 0.5rem;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 0.92rem;
+  outline: 0;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.adoption-modal__field input:focus,
+.adoption-modal__field select:focus,
+.adoption-modal__field textarea:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgb(255 152 0 / 18%);
+  background: #ffffff;
+}
+
+.adoption-modal__field input[aria-invalid='true'],
+.adoption-modal__field textarea[aria-invalid='true'] {
+  border-color: var(--destructive);
+}
+
+.adoption-modal__error {
+  color: var(--destructive);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.adoption-modal__hint {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.adoption-modal__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.adoption-modal__spin {
+  animation: spin 800ms linear infinite;
+}
+
+/* Estado de éxito */
+.adoption-modal__success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0.5rem;
+  text-align: center;
+}
+
+.adoption-modal__success-icon {
+  display: inline-grid;
+  width: 5.5rem;
+  height: 5.5rem;
+  place-items: center;
+  margin-bottom: 1.2rem;
+  border-radius: 50%;
+  background: var(--secondary);
+  color: var(--status-success);
+}
+
+.adoption-modal__success-title {
+  margin: 0 0 0.5rem;
+  color: var(--foreground);
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.5vw, 2.3rem);
+  font-weight: 700;
+}
+
+.adoption-modal__success-desc {
+  max-width: 28rem;
+  margin: 0 0 1.25rem;
+  color: var(--muted-foreground);
+  font-size: 1rem;
+}
+
+.adoption-modal__success-ticket {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 0.5rem;
+  background: var(--secondary);
+  color: var(--primary);
+  font-family: var(--font-code);
+  font-size: 0.88rem;
+}
+
+.adoption-modal__success-info {
+  max-width: 30rem;
+  margin: 0 0 1.75rem;
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .adoption-modal {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .adoption-modal__row {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .adoption-modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .adoption-modal__actions button {
+    width: 100%;
+  }
+}

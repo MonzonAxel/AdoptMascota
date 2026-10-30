@@ -1,0 +1,110 @@
+.public-layout {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.public-layout__header {
+  position: sticky;
+  z-index: 10;
+  top: 0;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--background) 92%, white);
+}
+
+.public-layout__bar {
+  display: flex;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.public-layout__nav {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.public-layout__link,
+.public-layout__login {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.45rem;
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.public-layout__link:hover,
+.public-layout__link.active {
+  background: var(--secondary);
+  color: var(--primary);
+}
+
+.public-layout__login {
+  margin-left: 0.5rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.public-layout__login:hover {
+  background: #256b2a;
+}
+
+.public-layout__main {
+  flex: 1;
+}
+
+.public-layout__footer {
+  border-top: 1px solid var(--border);
+  background: var(--card);
+}
+
+.public-layout__footer-content {
+  display: flex;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+
+.public-layout__footer-content span:first-child {
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+@media (max-width: 680px) {
+  .public-layout__bar {
+    min-height: auto;
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .public-layout__nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .public-layout__login {
+    margin-left: 0;
+  }
+
+  .public-layout__footer-content {
+    min-height: 4rem;
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+}

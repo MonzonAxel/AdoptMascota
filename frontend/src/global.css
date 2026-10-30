@@ -1,0 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Paleta de colores */
+  --primary: #2e7d32;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f8e9;
+  --accent: #ff9800;
+  --accent-contrast: #e65100;
+  --foreground: #263238;
+  --background: #f9fbe7;
+  --card: #ffffff;
+
+  /* Colores de estado */
+  --status-success: #4caf50;
+  --status-warning: #fff9c4;
+  --status-warning-contrast: #e65100;
+  --status-error: #e53935;
+  --destructive: #e53935;
+
+  /* Bordes y elementos */
+  --border: #d8e1cf;
+  --input: #d8e1cf;
+  --ring: #ff9800;
+  --muted: #edf3df;
+  --muted-foreground: #58705b;
+  --radius: 0.65rem;
+
+  /* Tipografías */
+  --font-body: 'Inter', sans-serif;
+  --font-display-family: 'Fredoka', sans-serif;
+  --font-display: var(--font-display-family);
+  --font-code: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  border-color: var(--border);
+}
+
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Jerarquías visuales y tamaños generales */
+h1, .hero-title, .page-title {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--foreground);
+}
+
+h2, .section-title, .modal-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.5vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--foreground);
+}
+
+h3, .card-subtitle, .card-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--foreground);
+}
+
+p, .body-text, .description {
+  font-family: var(--font-body);
+  font-size: clamp(0.95rem, 1.5vw, 1rem);
+  line-height: 1.6;
+}
+
+.metadata, .status-tag, .badge {
+  font-family: var(--font-code);
+  font-size: clamp(0.6rem, 1.2vw, 0.85rem);
+  letter-spacing: 0.02em;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: #c8e6c9;
+  color: var(--foreground);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.page-container {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.page-kicker {
+  margin: 0 0 0.5rem;
+  color: var(--primary);
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page-description {
+  max-width: 42rem;
+  margin: 1rem 0 0;
+  color: var(--muted-foreground);
+  font-size: clamp(0.95rem, 1.5vw, 1rem);
+}

@@ -1,0 +1,785 @@
+openapi: 3.0.3
+info:
+  title: AdoptMascota API
+  version: 0.4.0
+  description: |
+    API REST del centro de adopción. Respuestas en formato `{ success, message, data }`.
+
+    **Cómo probar endpoints protegidos:** hacé login en `POST /auth/login`. La API guarda la sesión
+    en una cookie `HttpOnly`, que el navegador envía automáticamente. Las integraciones confiables
+    también pueden usar `Authorization: Bearer <token>`.
+servers:
+  - url: http://localhost:3000/api
+tags:
+  - name: Sistema
+  - name: Autenticación
+  - name: Usuarios
+    description: Gestión de usuarios del panel. Salvo `/usuarios/me`, requiere rol **admin**.
+  - name: Solicitudes
+    description: |
+      Solicitudes de adopción. **Enviar** el formulario (`POST /solicitudes`) es público; **todo lo demás** es solo para
+      el personal (admin o administrativo), porque las solicitudes contienen datos personales.
+
+      Una mascota disponible puede recibir varias solicitudes. El personal controla cuándo pasa a `en_proceso`; desde
+      ese estado no se aceptan nuevas. Al **aprobar** una solicitud la mascota pasa a `adoptado`; rechazar no cambia
+      automáticamente el estado de la mascota. Una solicitud aprobada o rechazada ya no se puede modificar.
+  - name: Mascotas
+    description: |
+      Galería pública y gestión de mascotas. **Ver** (GET) es público: el público solo ve las mascotas
+      `disponible`. **Crear, editar, dar de baja y manejar fotos** requiere estar logueado (admin o administrativo).
+components:
+  securitySchemes:
+    cookieAuth: { type: apiKey, in: cookie, name: adoptmascota_token }
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    Ok:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
+        data: { type: object, nullable: true }
+    Error:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string }
+        errors:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              campo: { type: string }
+              mensaje: { type: string }
+    Usuario:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        email: { type: string, example: admin@adoptmascota.com }
+        rol: { type: string, enum: [admin, administrativo] }
+        nombre: { type: string, example: Admin }
+        apellido: { type: string, example: AdoptMascota }
+        creado: { type: string, format: date-time }
+        eliminado: { type: string, format: date-time, nullable: true, description: Fecha de baja lógica; null si está activo. }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, example: admin@adoptmascota.com }
+        password: { type: string, example: Admin1234! }
+    UsuarioCrear:
+      type: object
+      required: [email, password, nombre, apellido]
+      properties:
+        email: { type: string, example: maria@adoptmascota.com }
+        password: { type: string, minLength: 8, maxLength: 72, example: Clave12345 }
+        nombre: { type: string, example: María }
+        apellido: { type: string, example: Gómez }
+        rol: { type: string, enum: [admin, administrativo], default: administrativo }
+    UsuarioActualizar:
+      type: object
+      description: Enviá solo los campos que quieras cambiar.
+      properties:
+        email: { type: string }
+        password: { type: string, minLength: 8, maxLength: 72 }
+        nombre: { type: string }
+        apellido: { type: string }
+        rol: { type: string, enum: [admin, administrativo] }
+    Foto:
+      type: object
+      properties:
+        id: { type: integer, example: 7 }
+        url: { type: string, example: 'http://localhost:3000/uploads/1727890000000-3f2a.jpg' }
+        es_principal: { type: boolean }
+        orden: { type: integer, example: 0 }
+    MascotaResumen:
+      type: object
+      description: Datos de una tarjeta de la galería.
+      properties:
+        id: { type: integer, example: 1 }
+        nombre: { type: string, example: Luna }
+        especie: { type: string, enum: [perro, gato] }
+        raza: { type: string, nullable: true, example: Mestizo }
+        sexo: { type: string, enum: [macho, hembra] }
+        tamano: { type: string, enum: [pequeno, mediano, grande] }
+        edad: { type: integer, nullable: true, description: Edad en años, example: 3 }
+        color: { type: string, example: marron }
+        estado: { type: string, enum: [disponible, en_proceso, adoptado] }
+        foto_principal: { type: string, nullable: true, description: URL completa de la foto de portada }
+        vacunado: { type: boolean, description: Solo lo ve el personal }
+        esterilizado: { type: boolean, description: Solo lo ve el personal }
+        fecha_ingreso: { type: string, format: date-time, description: Solo lo ve el personal }
+    MascotaDetalle:
+      type: object
+      description: Datos de la pantalla de detalle. `creado_por` y `actualizado_por` solo los ve el personal.
+      properties:
+        id: { type: integer }
+        nombre: { type: string }
+        especie: { type: string, enum: [perro, gato] }
+        raza: { type: string, nullable: true }
+        sexo: { type: string, enum: [macho, hembra] }
+        tamano: { type: string, enum: [pequeno, mediano, grande] }
+        edad: { type: integer, nullable: true }
+        color: { type: string }
+        comportamiento: { type: string, nullable: true, description: La "breve reseña" }
+        vacunado: { type: boolean }
+        esterilizado: { type: boolean }
+        estado: { type: string, enum: [disponible, en_proceso, adoptado] }
+        fecha_ingreso: { type: string, format: date-time }
+        fotos:
+          type: array
+          description: La foto principal siempre viene primero.
+          items: { $ref: '#/components/schemas/Foto' }
+        creado_por: { type: integer, nullable: true }
+        actualizado_por: { type: integer, nullable: true }
+    RespuestaMascota:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
+        data: { $ref: '#/components/schemas/MascotaDetalle' }
+    RespuestaListadoMascotas:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
+        data:
+          type: object
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/MascotaResumen' } }
+            total: { type: integer, example: 25 }
+            page: { type: integer, example: 1 }
+            limit: { type: integer, example: 12 }
+            totalPages: { type: integer, example: 3 }
+    RespuestaOpcionesFiltros:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
+        data:
+          type: object
+          properties:
+            especies: { type: array, items: { type: string }, example: [perro, gato] }
+            tamanos: { type: array, items: { type: string }, example: [pequeno, mediano, grande] }
+            colores: { type: array, items: { type: string }, example: [marron, negro] }
+            razas: { type: array, items: { type: string }, example: [Labrador, Mestizo] }
+    MascotaCrear:
+      type: object
+      required: [nombre, especie, sexo, tamano, color]
+      properties:
+        nombre: { type: string, maxLength: 100, example: Rocky }
+        especie: { type: string, enum: [perro, gato] }
+        sexo: { type: string, enum: [macho, hembra] }
+        tamano: { type: string, enum: [pequeno, mediano, grande] }
+        color: { type: string, enum: [negro, blanco, marron, gris, naranja, crema, dorado, atigrado, manchado, tricolor, otro] }
+        raza: { type: string, maxLength: 100, example: Mestizo }
+        edad: { type: integer, minimum: 0, maximum: 40, description: Edad en años (0 = menos de 1 año), example: 3 }
+        comportamiento: { type: string, maxLength: 2000, description: Breve reseña, example: Tranquilo y sociable. }
+        vacunado: { type: boolean }
+        esterilizado: { type: boolean }
+        estado: { type: string, enum: [disponible, en_proceso, adoptado], default: disponible }
+    MascotaCrearConFotos:
+      allOf:
+        - $ref: '#/components/schemas/MascotaCrear'
+        - type: object
+          properties:
+            fotos:
+              type: array
+              description: Hasta 6 imágenes JPG, PNG o WEBP. Si no se envía índice, la primera será portada cuando no haya una actual.
+              items: { type: string, format: binary }
+            foto_principal_index:
+              type: integer
+              minimum: 0
+              description: Índice (base cero) de la imagen enviada que quedará como portada.
+    MascotaActualizar:
+      type: object
+      description: Enviá solo los campos que quieras cambiar. Mandar `""` o `null` en raza, edad o comportamiento los borra.
+      properties:
+        nombre: { type: string }
+        especie: { type: string, enum: [perro, gato] }
+        sexo: { type: string, enum: [macho, hembra] }
+        tamano: { type: string, enum: [pequeno, mediano, grande] }
+        color: { type: string, enum: [negro, blanco, marron, gris, naranja, crema, dorado, atigrado, manchado, tricolor, otro] }
+        raza: { type: string, nullable: true }
+        edad: { type: integer, nullable: true, minimum: 0, maximum: 40 }
+        comportamiento: { type: string, nullable: true }
+        vacunado: { type: boolean }
+        esterilizado: { type: boolean }
+        estado: { type: string, enum: [disponible, en_proceso, adoptado] }
+    SubirFotos:
+      type: object
+      required: [fotos]
+      properties:
+        fotos:
+          type: array
+          description: Hasta 6 imágenes JPG, PNG o WEBP por vez (una mascota puede tener 6 en total).
+          items: { type: string, format: binary }
+        foto_principal_index:
+          type: integer
+          minimum: 0
+          description: Índice (base cero) de la imagen enviada que quedará como portada; si se omite, se conserva la actual.
+    SolicitudCrear:
+      type: object
+      required: [animal_id, nombre_apellido, email, dni, edad, telefono_celular, ocupacion, localidad_barrio, direccion, vivienda, tipo_tenencia, detalle_vivienda, personas_hogar, hay_ninos_hogar, otros_animales_hogar, frecuencia_paseo, cuidador_vacaciones]
+      properties:
+        animal_id: { type: integer, description: Id de la mascota que se quiere adoptar, example: 1 }
+        nombre_apellido: { type: string, maxLength: 100, example: Ana Pérez }
+        email: { type: string, maxLength: 150, example: ana@mail.com }
+        dni: { type: string, minLength: 7, maxLength: 8, pattern: '^[0-9]{7,8}$', example: '30123456' }
+        edad: { type: integer, minimum: 18, maximum: 110, description: Hay que ser mayor de 18 años, example: 34 }
+        telefono_celular: { type: string, description: 'Solo números, espacios, + - y paréntesis', example: '+54 221 555-1234' }
+        telefono_fijo: { type: string, nullable: true, description: Opcional, example: '0221 423-5555' }
+        ocupacion: { type: string, maxLength: 150, example: Docente }
+        localidad_barrio: { type: string, maxLength: 150, example: 'La Plata, Centro' }
+        direccion: { type: string, maxLength: 150, example: 'Calle 7 N° 123' }
+        vivienda: { type: string, enum: [casa, departamento, ph, otro] }
+        tipo_tenencia: { type: string, enum: [propietario, inquilino], description: '¿Es propietario/a o inquilino/a?' }
+        permite_animales: { type: boolean, description: 'Obligatorio solo si es inquilino/a (si el propietario permite animales). Si es propietario/a se ignora.' }
+        detalle_vivienda: { type: string, maxLength: 2000, description: 'Balcón, terraza, patio o ninguna; rejas, muros, red...', example: Casa con patio cerrado con muro de 2 metros }
+        personas_hogar: { type: string, maxLength: 2000, description: Cuántas personas viven en el hogar y sus edades, example: '3 personas: 34, 36 y 8 años' }
+        hay_ninos_hogar: { type: string, maxLength: 2000, example: 'Sí, una nena de 8 años' }
+        otros_animales_hogar: { type: string, maxLength: 2000, description: 'Si hay otros animales: si están vacunados o castrados y sus edades', example: 'No' }
+        frecuencia_paseo: { type: string, maxLength: 255, example: 3 veces por día }
+        cuidador_vacaciones: { type: string, maxLength: 2000, example: Mi hermana }
+    RespuestaSolicitudCreada:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string, example: Solicitud enviada. El refugio se va a comunicar con vos. }
+        data:
+          type: object
+          description: Solo una confirmación mínima (no se devuelven los datos personales).
+          properties:
+            id: { type: integer, example: 12 }
+            estado: { type: string, example: pendiente }
+            mascota:
+              type: object
+              properties:
+                id: { type: integer, example: 1 }
+                nombre: { type: string, example: Luna }
+    Persona:
+      type: object
+      nullable: true
+      properties:
+        id: { type: integer, example: 1 }
+        nombre: { type: string, example: Adela }
+        apellido: { type: string, example: Admin }
+    MascotaCorta:
+      type: object
+      nullable: true
+      properties:
+        id: { type: integer, example: 1 }
+        nombre: { type: string, example: Luna }
+        especie: { type: string, enum: [perro, gato] }
+        estado: { type: string, enum: [disponible, en_proceso, adoptado] }
+        foto_principal: { type: string, nullable: true }
+    SolicitudResumen:
+      type: object
+      description: Una fila del listado.
+      properties:
+        id: { type: integer }
+        estado: { type: string, enum: [pendiente, en_revision, aprobada, rechazada] }
+        nombre_apellido: { type: string }
+        email: { type: string }
+        telefono_celular: { type: string }
+        creado: { type: string, format: date-time }
+        fecha_resolucion: { type: string, format: date-time, nullable: true }
+        mascota: { $ref: '#/components/schemas/MascotaCorta' }
+    RespuestaListadoSolicitudes:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
+        data:
+          type: object
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/SolicitudResumen' } }
+            total: { type: integer }
+            page: { type: integer }
+            limit: { type: integer }
+            totalPages: { type: integer }
+    Observacion:
+      type: object
+      properties:
+        id: { type: integer }
+        observacion: { type: string, example: Visita domiciliaria OK }
+        creado: { type: string, format: date-time }
+        autor: { $ref: '#/components/schemas/Persona' }
+    CambioHistorial:
+      type: object
+      description: Un cambio registrado en la auditoría (quién, qué y cuándo).
+      properties:
+        id: { type: integer }
+        accion: { type: string, enum: [crear, actualizar, eliminar] }
+        campo: { type: string, nullable: true, example: estado }
+        valor_antiguo: { type: string, nullable: true, example: pendiente }
+        valor_actual: { type: string, nullable: true, example: en_revision }
+        creado: { type: string, format: date-time }
+        usuario: { $ref: '#/components/schemas/Persona' }
+    SolicitudDetalle:
+      type: object
+      description: Detalle completo. Los campos del formulario tienen los mismos nombres que en `POST /solicitudes`.
+      properties:
+        id: { type: integer }
+        estado: { type: string, enum: [pendiente, en_revision, aprobada, rechazada] }
+        creado: { type: string, format: date-time }
+        fecha_resolucion: { type: string, format: date-time, nullable: true }
+        revisado_por: { $ref: '#/components/schemas/Persona' }
+        nombre_apellido: { type: string }
+        dni: { type: string, nullable: true, description: Puede ser null en solicitudes anteriores a la migración. }
+        edad: { type: integer }
+        email: { type: string }
+        telefono_celular: { type: string }
+        telefono_fijo: { type: string, nullable: true }
+        ocupacion: { type: string }
+        localidad_barrio: { type: string }
+        direccion: { type: string }
+        vivienda: { type: string }
+        tipo_tenencia: { type: string }
+        permite_animales: { type: boolean, nullable: true }
+        detalle_vivienda: { type: string }
+        personas_hogar: { type: string }
+        hay_ninos_hogar: { type: string }
+        otros_animales_hogar: { type: string }
+        frecuencia_paseo: { type: string }
+        cuidador_vacaciones: { type: string }
+        mascota: { $ref: '#/components/schemas/MascotaCorta' }
+        observaciones:
+          type: array
+          description: La más antigua primero.
+          items: { $ref: '#/components/schemas/Observacion' }
+        historial:
+          type: array
+          description: Cambios de estado registrados. El más reciente primero.
+          items: { $ref: '#/components/schemas/CambioHistorial' }
+    RespuestaSolicitud:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
+        data: { $ref: '#/components/schemas/SolicitudDetalle' }
+    CambiarEstado:
+      type: object
+      required: [estado]
+      properties:
+        estado: { type: string, enum: [pendiente, en_revision, aprobada, rechazada], example: en_revision }
+        observacion: { type: string, maxLength: 2000, description: Nota opcional que se guarda como observación (por ejemplo el motivo de un rechazo), example: Visita domiciliaria OK }
+    CrearObservacion:
+      type: object
+      required: [observacion]
+      properties:
+        observacion: { type: string, maxLength: 2000, example: Llamé por teléfono y no atendió }
+    RespuestaObservacion:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
+        data: { $ref: '#/components/schemas/Observacion' }
+  responses:
+    NoAutenticado:
+      description: Falta el token o es inválido/vencido
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    SinPermiso:
+      description: El rol del usuario no permite esta acción
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    DatosInvalidos:
+      description: Datos inválidos
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NoEncontrado:
+      description: No existe
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  parameters:
+    IdUsuario:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    IdMascota:
+      name: id
+      in: path
+      required: true
+      description: Id de la mascota
+      schema: { type: integer }
+    IdSolicitud:
+      name: id
+      in: path
+      required: true
+      description: Id de la solicitud
+      schema: { type: integer }
+    IdFoto:
+      name: fotoId
+      in: path
+      required: true
+      description: Id de la foto (sale en `fotos[].id`)
+      schema: { type: integer }
+paths:
+  /health:
+    get:
+      summary: Estado de la API
+      tags: [Sistema]
+      responses:
+        '200':
+          description: OK
+          content: { application/json: { schema: { $ref: '#/components/schemas/Ok' } } }
+
+  /auth/login:
+    post:
+      summary: Iniciar sesión (establece cookie HttpOnly)
+      tags: [Autenticación]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' } } }
+      responses:
+        '200': { description: Sesión iniciada; establece la cookie HttpOnly y devuelve usuario y expiración. }
+        '401': { description: Email o contraseña incorrectos }
+        '429': { description: 'Demasiados intentos fallidos de inicio de sesión (límite por IP)' }
+        '422': { $ref: '#/components/responses/DatosInvalidos' }
+  /auth/logout:
+    post:
+      summary: Cerrar sesión (revoca la sesión actual)
+      tags: [Autenticación]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200': { description: Sesión cerrada }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+
+  /usuarios/me:
+    get:
+      summary: Perfil del usuario logueado
+      tags: [Usuarios]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200': { description: Datos del usuario }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+  /usuarios:
+    get:
+      summary: Listar usuarios (solo admin)
+      tags: [Usuarios]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - { name: estado, in: query, description: Por defecto lista usuarios activos., schema: { type: string, enum: [activos, inactivos], default: activos } }
+      responses:
+        '200': { description: Lista de usuarios }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+    post:
+      summary: Crear usuario (solo admin)
+      tags: [Usuarios]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UsuarioCrear' } } }
+      responses:
+        '201': { description: Usuario creado }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '409': { description: El email ya está en uso }
+        '422': { $ref: '#/components/responses/DatosInvalidos' }
+  /usuarios/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdUsuario'
+    get:
+      summary: Ver un usuario (solo admin)
+      tags: [Usuarios]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200': { description: Datos del usuario }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      summary: Editar un usuario (solo admin)
+      tags: [Usuarios]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UsuarioActualizar' } } }
+      responses:
+        '200': { description: Usuario actualizado }
+        '400': { description: No podés cambiar tu propio rol / no enviaste datos }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { description: El email ya está en uso }
+        '422': { $ref: '#/components/responses/DatosInvalidos' }
+    delete:
+      summary: Dar de baja un usuario (baja lógica, solo admin)
+      tags: [Usuarios]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200': { description: Usuario dado de baja }
+        '400': { description: No podés eliminar tu propio usuario }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /usuarios/{id}/reactivar:
+    patch:
+      summary: Reactivar un usuario dado de baja (solo admin)
+      description: Restaura la cuenta y registra la acción en el historial de auditoría.
+      tags: [Usuarios]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdUsuario' }]
+      responses:
+        '200': { description: Usuario reactivado }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { description: El usuario ya está activo }
+
+  /mascotas:
+    get:
+      summary: Listar mascotas con filtros y paginación
+      description: |
+        Público: solo devuelve mascotas `disponible`. Si mandás una cookie o token válido (personal), ves todas
+        y podés filtrar por `estado`. Las más nuevas aparecen primero.
+        Los filtros con varias opciones se separan con coma, por ejemplo `especie=perro,gato`.
+      tags: [Mascotas]
+      security: [{}, { cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - { name: especie, in: query, description: Uno o varios valores, schema: { type: array, items: { type: string, enum: [perro, gato] } }, style: form, explode: false }
+        - { name: tamano, in: query, description: Uno o varios valores, schema: { type: array, items: { type: string, enum: [pequeno, mediano, grande] } }, style: form, explode: false }
+        - { name: color, in: query, description: Uno o varios valores, schema: { type: array, items: { type: string, enum: [negro, blanco, marron, gris, naranja, crema, dorado, atigrado, manchado, tricolor, otro] } }, style: form, explode: false }
+        - { name: raza, in: query, description: 'Raza exacta (las opciones salen de GET /mascotas/filtros)', schema: { type: string } }
+        - { name: edad_min, in: query, description: Edad mínima en años, schema: { type: integer, minimum: 0, maximum: 40 } }
+        - { name: edad_max, in: query, description: Edad máxima en años, schema: { type: integer, minimum: 0, maximum: 40 } }
+        - { name: estado, in: query, description: 'Solo personal. Para el público se ignora.', schema: { type: array, items: { type: string, enum: [disponible, en_proceso, adoptado] } }, style: form, explode: false }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, description: Mascotas por página (máximo 50), schema: { type: integer, minimum: 1, maximum: 50, default: 12 } }
+      responses:
+        '200':
+          description: Página de resultados
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaListadoMascotas' } } }
+        '422': { $ref: '#/components/responses/DatosInvalidos' }
+    post:
+      summary: Crear una mascota (con fotos opcionales)
+      description: |
+        Se puede enviar como **multipart/form-data** (con fotos) o como **JSON** (sin fotos; después se suben con
+        `POST /mascotas/{id}/fotos`). Se puede elegir la portada con `foto_principal_index`; si se omite y no hay foto
+        principal, la primera imagen queda como portada.
+      tags: [Mascotas]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data: { schema: { $ref: '#/components/schemas/MascotaCrearConFotos' } }
+          application/json: { schema: { $ref: '#/components/schemas/MascotaCrear' } }
+      responses:
+        '201':
+          description: Mascota creada
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaMascota' } } }
+        '400': { description: 'Archivo no permitido o campo de fotos incorrecto' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '413': { description: Una foto supera el tamaño máximo (5 MB) }
+        '422': { $ref: '#/components/responses/DatosInvalidos' }
+
+  /mascotas/filtros:
+    get:
+      summary: Opciones para los desplegables del filtro
+      description: Solo incluye valores que existen entre las mascotas disponibles (no ofrece filtros que devolverían 0 resultados).
+      tags: [Mascotas]
+      responses:
+        '200':
+          description: Opciones disponibles
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaOpcionesFiltros' } } }
+
+  /mascotas/{id}:
+    get:
+      summary: Detalle de una mascota
+      description: El público solo puede ver mascotas `disponible` (las demás responden 404).
+      tags: [Mascotas]
+      security: [{}, { cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdMascota' }]
+      responses:
+        '200':
+          description: Datos de la mascota con sus fotos
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaMascota' } } }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      summary: Editar una mascota
+      tags: [Mascotas]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdMascota' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/MascotaActualizar' } } }
+      responses:
+        '200':
+          description: Mascota actualizada
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaMascota' } } }
+        '400': { description: No se envió ningún dato }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '422': { $ref: '#/components/responses/DatosInvalidos' }
+    delete:
+      summary: Dar de baja una mascota (baja lógica)
+      description: No se puede si tiene solicitudes de adopción en estado `pendiente` o `en_revision`.
+      tags: [Mascotas]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdMascota' }]
+      responses:
+        '200': { description: Mascota dada de baja }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { description: Tiene solicitudes de adopción activas }
+
+  /mascotas/{id}/fotos:
+    post:
+      summary: Agregar fotos a una mascota
+      description: Hasta 6 fotos por mascota en total. Se puede seleccionar la portada con `foto_principal_index`; si no se envía y no existe portada actual, queda la primera imagen cargada.
+      tags: [Mascotas]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdMascota' }]
+      requestBody:
+        required: true
+        content: { multipart/form-data: { schema: { $ref: '#/components/schemas/SubirFotos' } } }
+      responses:
+        '201':
+          description: Fotos agregadas. Devuelve la mascota completa.
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaMascota' } } }
+        '400': { description: 'No se envió ninguna foto, o el archivo no está permitido' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '413': { description: Una foto supera el tamaño máximo (5 MB) }
+        '422': { description: 'El archivo no es una imagen real, o se supera el máximo de 6 fotos' }
+
+  /mascotas/{id}/fotos/{fotoId}:
+    delete:
+      summary: Eliminar una foto
+      description: Si era la portada, la siguiente foto pasa a serlo automáticamente.
+      tags: [Mascotas]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/IdMascota' }
+        - { $ref: '#/components/parameters/IdFoto' }
+      responses:
+        '200':
+          description: Foto eliminada. Devuelve la mascota completa.
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaMascota' } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /mascotas/{id}/fotos/{fotoId}/principal:
+    patch:
+      summary: Elegir cuál es la foto de portada
+      tags: [Mascotas]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/IdMascota' }
+        - { $ref: '#/components/parameters/IdFoto' }
+      responses:
+        '200':
+          description: Portada actualizada. Devuelve la mascota completa.
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaMascota' } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /solicitudes:
+    post:
+      summary: Enviar una solicitud de adopción (público)
+      description: |
+        Formulario público. Reglas:
+        - Hay que ser **mayor de 18 años**.
+        - El DNI debe tener entre 7 y 8 dígitos. Puede haber hasta **5 solicitudes activas por DNI**; al llegar al límite hay que esperar a que el refugio resuelva alguna.
+        - Una mascota `disponible` puede recibir solicitudes de distintas personas. El personal decide cuándo pasa a `en_proceso`; desde entonces no se aceptan nuevas solicitudes (**409**).
+        - Si la persona es **inquilina**, hay que indicar `permite_animales`.
+        - Hay un **límite de envíos por IP** (responde **429**).
+
+        El estado, el revisor y las fechas los define el sistema: si se envían, se ignoran.
+
+        **Para probarlo en Swagger:** el ejemplo usa `animal_id` 1. Después de un envío exitoso la mascota sigue
+        disponible para recibir otras solicitudes hasta que el personal cambie su estado desde la gestión de mascotas.
+      tags: [Solicitudes]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SolicitudCrear' } } }
+      responses:
+        '201':
+          description: Solicitud recibida
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaSolicitudCreada' } } }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { description: 'La mascota no está disponible o el DNI alcanzó el tope de 5 solicitudes activas' }
+        '422': { $ref: '#/components/responses/DatosInvalidos' }
+        '429': { description: Demasiados envíos seguidos desde la misma IP }
+    get:
+      summary: Listar solicitudes (personal)
+      description: Las más nuevas primero. Para ver los datos completos de una, usar `GET /solicitudes/{id}`.
+      tags: [Solicitudes]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - { name: estado, in: query, description: Uno o varios valores, schema: { type: array, items: { type: string, enum: [pendiente, en_revision, aprobada, rechazada] } }, style: form, explode: false }
+        - { name: animal_id, in: query, description: Solo las solicitudes de esa mascota, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, description: Solicitudes por página (máximo 100), schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200':
+          description: Página de resultados
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaListadoSolicitudes' } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '422': { $ref: '#/components/responses/DatosInvalidos' }
+
+  /solicitudes/{id}:
+    get:
+      summary: Detalle de una solicitud (personal)
+      description: Incluye los datos del formulario, la mascota, las observaciones y el historial de cambios.
+      tags: [Solicitudes]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdSolicitud' }]
+      responses:
+        '200':
+          description: Solicitud completa
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaSolicitud' } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /solicitudes/{id}/estado:
+    put:
+      summary: Cambiar el estado de una solicitud (personal)
+      description: |
+        Pasos permitidos: `pendiente` y `en_revision` pueden ir a cualquiera de los otros estados.
+        `aprobada` y `rechazada` son **finales** (responde 409 si se intenta modificarlas).
+
+        Efectos: al **aprobar**, la mascota pasa a `adoptado`. Al **rechazar**, el estado de la mascota no cambia y queda bajo control del personal.
+        El cambio queda registrado en el historial con quién lo hizo. Se puede adjuntar una nota en `observacion`.
+      tags: [Solicitudes]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdSolicitud' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CambiarEstado' } } }
+      responses:
+        '200':
+          description: Estado actualizado. Devuelve la solicitud completa.
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaSolicitud' } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { description: 'La solicitud ya está en ese estado o ya fue resuelta (aprobada o rechazada)' }
+        '422': { $ref: '#/components/responses/DatosInvalidos' }
+
+  /solicitudes/{id}/observaciones:
+    post:
+      summary: Agregar una observación a una solicitud (personal)
+      description: Notas internas del refugio. Se pueden agregar también a solicitudes ya resueltas.
+      tags: [Solicitudes]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/IdSolicitud' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CrearObservacion' } } }
+      responses:
+        '201':
+          description: Observación agregada
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaObservacion' } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '422': { $ref: '#/components/responses/DatosInvalidos' }
