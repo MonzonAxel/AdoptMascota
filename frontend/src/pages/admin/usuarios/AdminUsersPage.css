@@ -1,0 +1,30 @@
+.admin-users-page .admin-table {
+  min-width: 38rem;
+}
+
+.admin-users-page__status-filter {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--card);
+}
+
+.admin-users-page__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--status-success) 12%, white);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-users-page__status--inactive {
+  background: color-mix(in srgb, var(--status-error) 10%, white);
+  color: var(--destructive);
+}

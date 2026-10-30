@@ -1,0 +1,9 @@
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin: 1rem 0;
+  color: var(--muted-foreground);
+  font-size: 0.84rem;
+}

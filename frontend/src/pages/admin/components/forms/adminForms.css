@@ -1,0 +1,141 @@
+.admin-form {
+  display: grid;
+  gap: 1.2rem;
+  margin: 0 0 1.5rem;
+  padding: 1.5rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.55rem;
+  background: var(--card);
+}
+
+.admin-form--modal {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.admin-form__heading {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.admin-form__title {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.admin-form__hint {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+
+.admin-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-form__field {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 0.4rem;
+}
+
+.admin-form__field > label {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.admin-form__field input:not([type='checkbox']):not([type='file']),
+.admin-form__field select,
+.admin-form__field textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.65rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--input);
+  border-radius: 0.45rem;
+  background: #fafbf8;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.admin-form__field textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.admin-form__field input:focus-visible,
+.admin-form__field select:focus-visible,
+.admin-form__field textarea:focus-visible {
+  border-color: var(--ring);
+  outline: 3px solid color-mix(in srgb, var(--ring) 20%, transparent);
+  outline-offset: 1px;
+}
+
+.admin-form__field [aria-invalid='true'] {
+  border-color: var(--destructive);
+}
+
+.admin-form__error {
+  color: var(--destructive);
+  font-size: 0.75rem;
+}
+
+.admin-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.admin-form__checkboxes {
+  display: flex;
+  min-height: 2.65rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.1rem;
+}
+
+.admin-form__checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--foreground);
+  font-size: 0.82rem;
+}
+
+.admin-form__checkbox input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+@media (max-width: 620px) {
+  .admin-form {
+    padding: 1rem;
+  }
+
+  .admin-form__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-form__actions {
+    flex-direction: column-reverse;
+  }
+
+  .admin-form__actions .button {
+    width: 100%;
+  }
+}
